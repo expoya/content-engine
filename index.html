@@ -4,16 +4,26 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Expoya – AI Content Engine</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="assets/style.css" />
+  <script>
+    /* Optional: hier kannst du deine n8n-Endpoints setzen, ansonsten in js/api.js */
+    // window.__N8N__ = { TITLE_START_URL:"...", TITLE_POLL_URL:"...", TEXT_START_URL:"...", TEXT_POLL_URL:"..." };
+  </script>
 </head>
 <body>
   <div class="app-shell">
+    <header class="topbar">
+      <div class="brand"><span class="brand-name">AI Content Engine</span></div>
+    </header>
+
     <main class="container">
+      <!-- LINKES PANEL: FORM -->
       <section class="panel panel-input">
         <h2>Einstellungen & Eingaben</h2>
-        <form id="mainForm" autocomplete="off">
 
-          <!-- Zeile 1 -->
+        <form id="mainForm" autocomplete="off">
+          <!-- Zeile 1: Unternehmensname, #Expos, ContentSource_ID -->
           <div class="grid grid-3">
             <div class="form-group">
               <label for="firma">Unternehmensname</label>
@@ -29,7 +39,7 @@
             </div>
           </div>
 
-          <!-- Zeile 2 -->
+          <!-- Zeile 2: Attribute + Zielsetzung -->
           <div class="grid grid-2">
             <div class="form-group">
               <label for="attribute">Attribute</label>
@@ -41,7 +51,7 @@
             </div>
           </div>
 
-          <!-- Weitere Felder -->
+          <!-- Zeile 3: Regionen + Zielgruppen -->
           <div class="grid grid-2">
             <div class="form-group">
               <label for="regionen">Regionen</label>
@@ -53,6 +63,7 @@
             </div>
           </div>
 
+          <!-- Zeile 4: Produkte/DL -->
           <div class="grid">
             <div class="form-group">
               <label for="produkte">Produkte / Dienstleistungen</label>
@@ -60,6 +71,7 @@
             </div>
           </div>
 
+          <!-- Zeile 5: Keywordliste -->
           <div class="grid">
             <div class="form-group">
               <label for="keywords">Keywordliste</label>
@@ -86,7 +98,7 @@
             </div>
           </div>
 
-          <!-- Radios -->
+          <!-- Segmented Controls -->
           <div class="grid grid-2">
             <div class="form-group">
               <div class="seg-label">Ortsbezug</div>
@@ -107,8 +119,18 @@
             </div>
           </div>
 
-          <!-- Modellauswahl -->
-          <h3>Modelle</h3>
+          <!-- Model-Preset -->
+          <div class="form-group">
+            <label for="modelPreset">Modell-Preset</label>
+            <select id="modelPreset">
+              <option value="">Eigenes Setup …</option>
+              <option value="Sprint-Mode">Sprint-Mode</option>
+              <option value="Eco-Mode">Eco-Mode</option>
+              <option value="Balanced">Balanced</option>
+            </select>
+          </div>
+
+          <!-- Model-Auswahl (2 Reihen à 3 Spalten wie früher) -->
           <div class="grid grid-3">
             <div class="form-group">
               <label for="modelTitleGenerator">Titel-Generator</label>
@@ -174,14 +196,22 @@
         </form>
       </section>
 
+      <!-- RECHTES PANEL: OUTPUT -->
       <section class="panel panel-output">
         <h2>Expos</h2>
         <ul id="expoList" class="expo-list">
           <li class="expo-placeholder">Hier erscheinen deine generierten Expo-Titel …</li>
         </ul>
+        <div class="export-actions">
+          <button id="exportCsvBtn" class="btn btn-secondary" style="display:none;">Export als CSV</button>
+          <button id="exportXmlBtn" class="btn btn-secondary" style="display:none;">Export als XML</button>
+        </div>
       </section>
     </main>
   </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/dompurify@3.0.8/dist/purify.min.js"></script>
   <script type="module" src="js/app.js"></script>
 </body>
 </html>
