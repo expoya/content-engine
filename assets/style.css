@@ -29,7 +29,6 @@ body{
   border-bottom:1px solid var(--line);
 }
 .brand{display:flex;align-items:center;gap:10px;padding:12px 18px;}
-.brand-logo{width:28px;height:28px;border-radius:6px;object-fit:contain}
 .brand-name{font-weight:700;letter-spacing:.2px}
 
 .container{
@@ -40,7 +39,7 @@ body{
   gap:18px;
 }
 
-/* Panels: input wider, output narrower (desktop) */
+/* Panels */
 .panel{
   background:var(--panel);
   border:1px solid var(--line);
@@ -69,11 +68,21 @@ input,select,textarea{
   border-radius:10px;
   padding:10px 12px;
   font-size:14px;
+  line-height:1.4;
+  font-family:inherit; /* wichtige Basis für Placeholder-Inherit */
   color:var(--text);
   outline: none;
 }
 input:focus,select:focus,textarea:focus{border-color:var(--green); box-shadow:0 0 0 3px var(--green-50)}
 textarea{resize:vertical; min-height:42px;}
+
+/* Einheitliche Placeholder (identisch zum Input) */
+input::placeholder,
+textarea::placeholder{
+  font: inherit;       /* exakt gleiche Family, Size, Line-Height */
+  color: var(--text);  /* gleiche Farbe wie normaler Text */
+  opacity: 1;          /* nicht zusätzlich ausgegraut */
+}
 
 .grid{display:grid; gap:12px}
 .grid-2{grid-template-columns:1fr 1fr}
@@ -86,18 +95,23 @@ textarea{resize:vertical; min-height:42px;}
 .sliders-row input[type=range]{width:100%}
 .range-val{font-size:12px;color:var(--muted)}
 
-/* Segmented (responsive) */
+/* Segmented Controls – zentriert & responsiv */
+.segwrap{ align-items:center; }
+.segwrap .seg-label{ text-align:center; }
+
 .segmented{
-  display:flex;                /* statt inline-grid */
+  display:inline-flex;        /* nimmt nur so viel Platz wie nötig */
+  justify-content:center;     /* Inhalte zentrieren */
   align-items:center;
+  flex-wrap:wrap;             /* bei Bedarf umbrechen */
   gap:6px;
   background:#f3faf6;
   border:1px solid var(--line);
   border-radius:999px;
   padding:6px;
-  width:100%;                  /* nimmt volle Spaltenbreite */
-  min-width:0;                 /* darf schrumpfen */
-  flex-wrap:wrap;              /* bricht bei Bedarf */
+  min-width:0;
+  max-width:100%;
+  margin:0 auto;              /* Block in der Spalte zentrieren */
 }
 .segmented input{display:none}
 .segmented label{
@@ -106,7 +120,7 @@ textarea{resize:vertical; min-height:42px;}
   border:1px solid transparent;
   font-size:13px;
   cursor:pointer;
-  white-space:nowrap;          /* keine hässlichen Zeilenbrüche im Chip */
+  white-space:nowrap;
 }
 .segmented input:checked + label{
   background:var(--green);
@@ -130,7 +144,7 @@ textarea{resize:vertical; min-height:42px;}
 .btn-secondary{background:#f2fbf6;border-color:var(--green);color:var(--green)}
 .btn-ghost{background:transparent}
 
-/* Expo list / accordion */
+/* Expo list */
 .expo-list{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:12px}
 .expo-placeholder{
   padding:14px;
@@ -148,10 +162,6 @@ textarea{resize:vertical; min-height:42px;}
 .expo-akk-body{display:none;border-top:1px solid var(--line);padding:12px}
 .expo-akkordeon.open .expo-akk-body{display:block}
 
-/* text preview & editor */
-.preview-box{border:1px solid var(--line);border-radius:10px;padding:12px;min-height:120px;background:#fff}
-.edit-actions{display:flex;gap:8px;margin-top:8px}
-
 /* toast */
 .toast{
   position:fixed; bottom:20px; right:20px;
@@ -160,39 +170,3 @@ textarea{resize:vertical; min-height:42px;}
   animation:toast-in .2s ease-out;
 }
 @keyframes toast-in{from{opacity:0; transform:translateY(10px)} to{opacity:1; transform:translateY(0)}}
-
-/* === Fix: Einheitliche Placeholder-Typo === */
-input::placeholder,
-textarea::placeholder,
-input::-webkit-input-placeholder,
-textarea::-webkit-input-placeholder,
-input::-moz-placeholder,
-textarea::-moz-placeholder,
-input:-ms-input-placeholder,
-textarea:-ms-input-placeholder,
-input::-ms-input-placeholder,
-textarea::-ms-input-placeholder {
-  font-family: inherit;
-  font-size: 14px;      /* wie normaler Input-Text */
-  color: var(--text);   /* exakt gleiche Farbe */
-  opacity: 1;           /* nicht zusätzlich ausgegraut */
-}
-
-/* === Fix: Segmented Controls wirklich responsive === */
-.form-group { min-width: 0; }                 /* darf schrumpfen */
-.grid.grid-3 > .form-group { min-width: 0; }
-
-.segmented{
-  display: flex;                               /* statt inline-grid */
-  flex-wrap: wrap;                             /* bricht bei Bedarf um */
-  align-items: center;
-  gap: 6px;
-  width: 100%;
-  min-width: 0;
-  max-width: 100%;
-}
-
-.segmented label{
-  white-space: nowrap;                         /* Chips bleiben kompakt */
-  flex: 0 0 auto;
-}
