@@ -73,9 +73,9 @@ function applyFormFromState() {
 }
 
 const LABELS = {
-  diversity_level: ['Sehr nüchtern','Zurückhaltend','Neutral','Kreativ','Sehr kreativ'],
-  detail_level   : ['Übersichtlich','Kurz','Neutral','Detailreich','Sehr detailreich'],
-  style_bias     : ['Faktisch','Sachlich','Neutral','Emotional','Werblich']
+  diversity_level: ['Sehr formell','Eher formell','Neutral','Eher locker','Sehr locker'],
+  detail_level   : ['Sehr Oberflächlich','Eher oberflächlich','Neutral','Eher detailreich','Sehr detailreich'],
+  style_bias     : ['Sehr faktisch','Eher faktisch','Neutral','Eher werblich','Sehr werblich']
 };
 function mapSliderLabel(key, val){
   const arr = LABELS[key] || ['1','2','3','4','5'];
