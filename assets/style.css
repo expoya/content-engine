@@ -161,11 +161,38 @@ textarea{resize:vertical; min-height:42px;}
 }
 @keyframes toast-in{from{opacity:0; transform:translateY(10px)} to{opacity:1; transform:translateY(0)}}
 
-/* Einheitliche Placeholder-Styles */
+/* === Fix: Einheitliche Placeholder-Typo === */
 input::placeholder,
-textarea::placeholder {
-  font-family: inherit;   /* gleich wie input */
-  font-size: 14px;        /* gleiche Größe */
-  color: var(--muted);    /* dezentes Grau */
-  opacity: 1;             /* nicht ausgegraut */
+textarea::placeholder,
+input::-webkit-input-placeholder,
+textarea::-webkit-input-placeholder,
+input::-moz-placeholder,
+textarea::-moz-placeholder,
+input:-ms-input-placeholder,
+textarea:-ms-input-placeholder,
+input::-ms-input-placeholder,
+textarea::-ms-input-placeholder {
+  font-family: inherit;
+  font-size: 14px;      /* wie normaler Input-Text */
+  color: var(--text);   /* exakt gleiche Farbe */
+  opacity: 1;           /* nicht zusätzlich ausgegraut */
+}
+
+/* === Fix: Segmented Controls wirklich responsive === */
+.form-group { min-width: 0; }                 /* darf schrumpfen */
+.grid.grid-3 > .form-group { min-width: 0; }
+
+.segmented{
+  display: flex;                               /* statt inline-grid */
+  flex-wrap: wrap;                             /* bricht bei Bedarf um */
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+}
+
+.segmented label{
+  white-space: nowrap;                         /* Chips bleiben kompakt */
+  flex: 0 0 auto;
 }
