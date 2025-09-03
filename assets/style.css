@@ -69,9 +69,9 @@ input,select,textarea{
   padding:10px 12px;
   font-size:14px;
   line-height:1.4;
-  font-family:inherit; /* wichtige Basis für Placeholder-Inherit */
+  font-family:inherit;
   color:var(--text);
-  outline: none;
+  outline:none;
 }
 input:focus,select:focus,textarea:focus{border-color:var(--green); box-shadow:0 0 0 3px var(--green-50)}
 textarea{resize:vertical; min-height:42px;}
@@ -79,9 +79,9 @@ textarea{resize:vertical; min-height:42px;}
 /* Einheitliche Placeholder (identisch zum Input) */
 input::placeholder,
 textarea::placeholder{
-  font: inherit;       /* exakt gleiche Family, Size, Line-Height */
-  color: var(--text);  /* gleiche Farbe wie normaler Text */
-  opacity: 1;          /* nicht zusätzlich ausgegraut */
+  font: inherit;
+  color: var(--text);
+  opacity: 1;
 }
 
 .grid{display:grid; gap:12px}
@@ -92,18 +92,27 @@ textarea::placeholder{
 }
 
 /* Sliders */
-.sliders-row input[type=range]{width:100%}
+.sliders-row input[type=range]{width:100%; accent-color: var(--green);}  /* <- dunkelgrün */
 .range-val{font-size:12px;color:var(--muted)}
+/* Slider-Beschriftung & Wert mittig */
+.sliders-row .form-group > label{ text-align:center; }
+.sliders-row .range-val{ text-align:center; }
 
-/* Segmented Controls – zentriert & responsiv */
+/* Segmented Controls – zentriert & responsive */
 .segwrap{ align-items:center; }
-.segwrap .seg-label{ text-align:center; }
+.segwrap .seg-label{
+  /* exakt wie andere Labels */
+  font-weight:600;
+  font-size:13px;
+  color:var(--muted);
+  text-align:center;
+}
 
 .segmented{
-  display:inline-flex;        /* nimmt nur so viel Platz wie nötig */
-  justify-content:center;     /* Inhalte zentrieren */
+  display:inline-flex;
+  justify-content:center;
   align-items:center;
-  flex-wrap:wrap;             /* bei Bedarf umbrechen */
+  flex-wrap:wrap;
   gap:6px;
   background:#f3faf6;
   border:1px solid var(--line);
@@ -111,7 +120,7 @@ textarea::placeholder{
   padding:6px;
   min-width:0;
   max-width:100%;
-  margin:0 auto;              /* Block in der Spalte zentrieren */
+  margin:0 auto;
 }
 .segmented input{display:none}
 .segmented label{
