@@ -10,44 +10,135 @@
   --green-50:#e9f7ef;
   --shadow:0 10px 25px rgba(0,0,0,0.06);
 }
+
 *{box-sizing:border-box}
 html,body{height:100%}
-body{ margin:0; font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif; color:var(--text); background:var(--bg); }
-.topbar{ position:sticky; top:0; z-index:10; background:#ffffffcc; backdrop-filter:saturate(1.2) blur(6px); border-bottom:1px solid var(--line); }
+body{
+  margin:0;
+  font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;
+  color:var(--text);
+  background:var(--bg);
+  -webkit-font-smoothing:antialiased;
+  -moz-osx-font-smoothing:grayscale;
+}
+
+.topbar{
+  position:sticky; top:0; z-index:10;
+  background:#ffffffcc;
+  backdrop-filter:saturate(1.2) blur(6px);
+  border-bottom:1px solid var(--line);
+}
 .brand{display:flex;align-items:center;gap:10px;padding:12px 18px;}
 .brand-logo{width:28px;height:28px;border-radius:6px;object-fit:contain}
 .brand-name{font-weight:700;letter-spacing:.2px}
-.container{ max-width:1400px; margin:24px auto; padding:0 16px; display:flex; gap:18px; }
-.panel{ background:var(--panel); border:1px solid var(--line); border-radius:16px; box-shadow:var(--shadow); padding:18px;}
+
+.container{
+  max-width:1400px;
+  margin:24px auto;
+  padding:0 16px;
+  display:flex;
+  gap:18px;
+}
+
+/* Panels: input wider, output narrower (desktop) */
+.panel{
+  background:var(--panel);
+  border:1px solid var(--line);
+  border-radius:16px;
+  box-shadow:var(--shadow);
+  padding:18px;
+}
 .panel h2{margin:0 0 10px 0;font-size:18px}
+
 .panel-input{flex:1.5; min-width: 820px;}
 .panel-output{flex:1; min-width: 420px;}
-@media (max-width:1200px){ .container{flex-direction:column} .panel-input{min-width:auto} .panel-output{min-width:auto} }
-.form-group{display:flex;flex-direction:column;gap:8px;margin-bottom:12px}
+
+@media (max-width:1200px){
+  .container{flex-direction:column}
+  .panel-input{min-width:auto}
+  .panel-output{min-width:auto}
+}
+
+/* Form */
+.form-group{display:flex;flex-direction:column;gap:8px;margin-bottom:12px; min-width:0;}
 label{font-weight:600;font-size:13px;color:var(--muted)}
-input,select,textarea{ width:100%; background:#fff; border:1px solid var(--line); border-radius:10px; padding:10px 12px; font-size:14px; color:var(--text); outline:none; }
+input,select,textarea{
+  width:100%;
+  background:#fff;
+  border:1px solid var(--line);
+  border-radius:10px;
+  padding:10px 12px;
+  font-size:14px;
+  color:var(--text);
+  outline: none;
+}
 input:focus,select:focus,textarea:focus{border-color:var(--green); box-shadow:0 0 0 3px var(--green-50)}
 textarea{resize:vertical; min-height:42px;}
-.hint{font-size:12px;color:var(--muted)}
+
 .grid{display:grid; gap:12px}
 .grid-2{grid-template-columns:1fr 1fr}
 .grid-3{grid-template-columns:1fr 1fr 1fr}
-@media (max-width:900px){ .grid-2,.grid-3{grid-template-columns:1fr} }
+@media (max-width:900px){
+  .grid-2,.grid-3{grid-template-columns:1fr}
+}
+
+/* Sliders */
 .sliders-row input[type=range]{width:100%}
 .range-val{font-size:12px;color:var(--muted)}
-.segmented{ display:inline-grid; grid-auto-flow:column; gap:6px; background:#f3faf6; border:1px solid var(--line); border-radius:999px; padding:6px;}
+
+/* Segmented (responsive) */
+.segmented{
+  display:flex;                /* statt inline-grid */
+  align-items:center;
+  gap:6px;
+  background:#f3faf6;
+  border:1px solid var(--line);
+  border-radius:999px;
+  padding:6px;
+  width:100%;                  /* nimmt volle Spaltenbreite */
+  min-width:0;                 /* darf schrumpfen */
+  flex-wrap:wrap;              /* bricht bei Bedarf */
+}
 .segmented input{display:none}
-.segmented label{ padding:6px 10px; border-radius:999px; border:1px solid transparent; font-size:13px; cursor:pointer; }
-.segmented input:checked + label{ background:var(--green); color:#fff; border-color:var(--green); }
+.segmented label{
+  padding:6px 10px;
+  border-radius:999px;
+  border:1px solid transparent;
+  font-size:13px;
+  cursor:pointer;
+  white-space:nowrap;          /* keine hässlichen Zeilenbrüche im Chip */
+}
+.segmented input:checked + label{
+  background:var(--green);
+  color:#fff;
+  border-color:var(--green);
+}
+
+/* Buttons */
 .actions, .export-actions{display:flex;gap:10px;align-items:center;margin-top:4px;flex-wrap:wrap}
-.btn{ border:1px solid var(--line); background:#fff; border-radius:10px; padding:10px 14px; font-weight:600; cursor:pointer; }
+.btn{
+  border:1px solid var(--line);
+  background:#fff;
+  border-radius:10px;
+  padding:10px 14px;
+  font-weight:600;
+  cursor:pointer;
+}
 .btn:hover{box-shadow:0 2px 12px rgba(0,0,0,.05)}
 .btn-primary{background:var(--green);color:#fff;border-color:var(--green)}
 .btn-primary:hover{background:var(--green-600)}
 .btn-secondary{background:#f2fbf6;border-color:var(--green);color:var(--green)}
 .btn-ghost{background:transparent}
+
+/* Expo list / accordion */
 .expo-list{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:12px}
-.expo-placeholder{ padding:14px; border:1px dashed var(--line); border-radius:12px; color:var(--muted); text-align:center; }
+.expo-placeholder{
+  padding:14px;
+  border:1px dashed var(--line);
+  border-radius:12px;
+  color:var(--muted);
+  text-align:center;
+}
 .expo-akkordeon{border:1px solid var(--line);border-radius:12px;overflow:hidden;background:#fff}
 .expo-akk-header{display:flex;align-items:center;gap:8px;padding:10px 12px;background:#f7fbf9}
 .expo-akk-index{font-weight:700;color:var(--green)}
@@ -56,7 +147,25 @@ textarea{resize:vertical; min-height:42px;}
 .btn-expand{margin-left:auto}
 .expo-akk-body{display:none;border-top:1px solid var(--line);padding:12px}
 .expo-akkordeon.open .expo-akk-body{display:block}
+
+/* text preview & editor */
 .preview-box{border:1px solid var(--line);border-radius:10px;padding:12px;min-height:120px;background:#fff}
 .edit-actions{display:flex;gap:8px;margin-top:8px}
-.toast{ position:fixed; bottom:20px; right:20px; background:#101a14; color:#fff; padding:10px 14px; border-radius:12px; box-shadow:0 10px 25px rgba(0,0,0,.18); animation:toast-in .2s ease-out;}
+
+/* toast */
+.toast{
+  position:fixed; bottom:20px; right:20px;
+  background:#101a14; color:#fff; padding:10px 14px; border-radius:12px;
+  box-shadow:0 10px 25px rgba(0,0,0,.18);
+  animation:toast-in .2s ease-out;
+}
 @keyframes toast-in{from{opacity:0; transform:translateY(10px)} to{opacity:1; transform:translateY(0)}}
+
+/* Einheitliche Placeholder-Styles */
+input::placeholder,
+textarea::placeholder {
+  font-family: inherit;   /* gleich wie input */
+  font-size: 14px;        /* gleiche Größe */
+  color: var(--muted);    /* dezentes Grau */
+  opacity: 1;             /* nicht ausgegraut */
+}
