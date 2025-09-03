@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Expoya – AI Content Engine</title>
+  <link rel="icon" href="assets/logo.png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="assets/style.css" />
+</head>
+<body>
+  <div class="app-shell">
+    <header class="topbar">
+      <div class="brand">
+        <img src="assets/logo.png" alt="Expoya" class="brand-logo">
+        <span class="brand-name">AI Content Engine</span>
+      </div>
+    </header>
+
+    <main class="container">
+      <!-- Left: Input Panel -->
+      <section class="panel panel-input">
+        <h2>Einstellungen & Eingaben</h2>
+
+        <form id="mainForm" autocomplete="off">
+          <div class="grid grid-2">
+            <div class="form-group">
+              <label for="firma">Unternehmensname</label>
+              <input id="firma" type="text" placeholder="z. B. Tischlerei Huber" required>
+            </div>
+            <div class="form-group">
+              <label for="exposCount"># Expos</label>
+              <input id="exposCount" type="number" min="1" max="100" value="15">
+            </div>
+          </div>
+
+          <div class="grid grid-3">
+            <div class="form-group">
+              <label for="domain">Domain</label>
+              <input id="domain" type="text" placeholder="example.at">
+            </div>
+            <div class="form-group">
+              <label for="webshop">Webshop-URL</label>
+              <input id="webshop" type="text" placeholder="https://shop.example.at">
+            </div>
+            <div class="form-group">
+              <label for="kurzbeschreibung">Kurzbeschreibung</label>
+              <input id="kurzbeschreibung" type="text" placeholder="1–2 Sätze zum Unternehmen">
+            </div>
+          </div>
+
+          <div class="grid grid-2">
+            <div class="form-group">
+              <label for="regionen">Regionen</label>
+              <textarea id="regionen" rows="1" placeholder="z. B. Linz; Wels; Vöcklabruck"></textarea>
+              <div class="hint">Mit , oder ; trennen</div>
+            </div>
+            <div class="form-group">
+              <label for="zielgruppen">Zielgruppen</label>
+              <textarea id="zielgruppen" rows="1" placeholder="z. B. Privatkunden; Architekten; Bauträger"></textarea>
+              <div class="hint">Mit , oder ; trennen</div>
+            </div>
+          </div>
+
+          <div class="grid">
+            <div class="form-group">
+              <label for="produkte">Produkte / Dienstleistungen</label>
+              <textarea id="produkte" rows="1" placeholder="z. B. Küchen; Esstische; Maßmöbel"></textarea>
+              <div class="hint">Mit , oder ; trennen</div>
+            </div>
+          </div>
+
+          <div class="grid">
+            <div class="form-group">
+              <label for="keywords">Keywordliste</label>
+              <textarea id="keywords" rows="1" placeholder="z. B. Tischlerei Linz; Massivholz Tisch; Küchenstudio Linz"></textarea>
+              <div class="hint">Mit , oder ; trennen</div>
+            </div>
+          </div>
+
+          <!-- Sliders -->
+          <div class="grid grid-3 sliders-row">
+            <div class="form-group">
+              <label for="diversity_level">Kreativität</label>
+              <input id="diversity_level" type="range" min="1" max="5" value="3">
+              <div class="range-val" id="diversity_level-value">Neutral</div>
+            </div>
+            <div class="form-group">
+              <label for="detail_level">Detailgrad</label>
+              <input id="detail_level" type="range" min="1" max="5" value="3">
+              <div class="range-val" id="detail_level-value">Neutral</div>
+            </div>
+            <div class="form-group">
+              <label for="style_bias">Schreibstil</label>
+              <input id="style_bias" type="range" min="1" max="5" value="3">
+              <div class="range-val" id="style_bias-value">Neutral</div>
+            </div>
+          </div>
+
+          <!-- Segmented controls -->
+          <div class="grid grid-2">
+            <div class="form-group">
+              <div class="seg-label">Ortsbezug</div>
+              <div class="segmented" role="radiogroup">
+                <input type="radio" id="ort-ohne" name="ortsbezug" value="ohne" checked>
+                <label for="ort-ohne">ohne</label>
+                <input type="radio" id="ort-exakt" name="ortsbezug" value="exakt">
+                <label for="ort-exakt">exakt</label>
+                <input type="radio" id="ort-umland" name="ortsbezug" value="umland">
+                <label for="ort-umland">Umland</label>
+                <input type="radio" id="ort-umland-stadtteile" name="ortsbezug" value="umland-stadtteile">
+                <label for="ort-umland-stadtteile">Umland+Stadtteile</label>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <div class="seg-label">Ansprache</div>
+              <div class="segmented" role="radiogroup">
+                <input type="radio" id="ans-neutral" name="ansprache" value="neutral" checked>
+                <label for="ans-neutral">neutral</label>
+                <input type="radio" id="ans-sie" name="ansprache" value="sie">
+                <label for="ans-sie">Sie</label>
+                <input type="radio" id="ans-du" name="ansprache" value="du">
+                <label for="ans-du">Du</label>
+              </div>
+            </div>
+          </div>
+
+          <!-- Agent Models -->
+          <div class="form-group">
+            <label for="modelPreset">Modell-Preset</label>
+            <select id="modelPreset">
+              <option value="">Eigenes Setup …</option>
+              <option value="Sprint-Mode">Sprint-Mode</option>
+              <option value="Eco-Mode">Eco-Mode</option>
+              <option value="Balanced">Balanced</option>
+            </select>
+          </div>
+
+          <div class="grid grid-3">
+            <div class="form-group">
+              <label for="modelTitleGenerator">Titel-Generator</label>
+              <select id="modelTitleGenerator">
+                <option>ChatGPT 5 mini</option>
+                <option>Gemini 2.5 Flash</option>
+                <option>Gemini 2.5 Pro</option>
+                <option>Claude Sonnet 4</option>
+                <option>ChatGPT o4 mini</option>
+                <option>ChatGPT 4.1 mini</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label for="modelTitleController">Titel-Kontrolle</label>
+              <select id="modelTitleController">
+                <option>ChatGPT 4.1 mini</option>
+                <option>ChatGPT 5 mini</option>
+                <option>Claude Sonnet 4</option>
+                <option>Gemini 2.5 Pro</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label for="modelSeoStrategist">SEO-Stratege</label>
+              <select id="modelSeoStrategist">
+                <option>Gemini 2.5 Pro</option>
+                <option>ChatGPT o4 mini</option>
+                <option>Claude Sonnet 4</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="grid grid-3">
+            <div class="form-group">
+              <label for="modelMicroTexter">Mikro-Texter</label>
+              <select id="modelMicroTexter">
+                <option>Gemini 2.5 Flash</option>
+                <option>ChatGPT 5 mini</option>
+                <option>Claude Sonnet 3.5</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label for="modelSeoVeredler">SEO-Veredler</label>
+              <select id="modelSeoVeredler">
+                <option>Claude Sonnet 4</option>
+                <option>ChatGPT 4.1</option>
+                <option>Gemini 2.5 Pro</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label for="modelSeoAuditor">SEO-Auditor</label>
+              <select id="modelSeoAuditor">
+                <option>ChatGPT o4 mini</option>
+                <option>ChatGPT 4.1</option>
+                <option>Gemini 2.5 Pro</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="actions">
+            <button id="generateBtn" type="button" class="btn btn-primary">Titel generieren</button>
+            <button id="clearBtn" type="button" class="btn btn-ghost">Felder leeren</button>
+          </div>
+        </form>
+      </section>
+
+      <!-- Right: Output Panel -->
+      <section class="panel panel-output">
+        <h2>Expos</h2>
+        <ul id="expoList" class="expo-list">
+          <li class="expo-placeholder">Hier erscheinen deine generierten Expo‑Titel …</li>
+        </ul>
+
+        <div class="export-actions">
+          <button id="exportCsvBtn" class="btn btn-secondary" style="display:none;">Export als CSV</button>
+          <button id="exportXmlBtn" class="btn btn-secondary" style="display:none;">Export als XML</button>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <!-- libs -->
+  <script src="https://cdn.jsdelivr.net/npm/turndown@7.1.3/dist/turndown.umd.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/dompurify@3.0.8/dist/purify.min.js"></script>
+
+  <!-- app -->
+  <script type="module" src="js/app.js"></script>
+</body>
+</html>
