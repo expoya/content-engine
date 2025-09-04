@@ -128,73 +128,75 @@
           </div>
 
           <!-- Presets & Modelle -->
-          <div class="form-group">
-            <label for="modelPreset">Modell-Preset</label>
-            <select id="modelPreset">
-              <option value="">Eigenes Setup …</option>
-              <option value="Sprint-Mode">Sprint-Mode</option>
-              <option value="Eco-Mode">Eco-Mode</option>
-              <option value="Balanced">Balanced</option>
-            </select>
-          </div>
+<!-- Modelle – Zeile 1: Preset + Titel-Generator + Titel-Kontrolleur -->
+<div class="grid grid-3">
+  <div class="form-group">
+    <label for="modelPreset">Modell-Preset</label>
+    <select id="modelPreset">
+      <option value="">Eigenes Setup …</option>
+      <option value="Sprint-Mode">Sprint-Mode</option>
+      <option value="Eco-Mode">Eco-Mode</option>
+      <option value="Balanced">Balanced</option>
+    </select>
+  </div>
+  <div class="form-group">
+    <label for="modelTitleGenerator">Titel-Generator</label>
+    <select id="modelTitleGenerator">
+      <option>ChatGPT 5 mini</option>
+      <option>Gemini 2.5 Flash</option>
+      <option>Gemini 2.5 Pro</option>
+      <option>Claude Sonnet 4</option>
+      <option>ChatGPT o4 mini</option>
+      <option>ChatGPT 4.1 mini</option>
+    </select>
+  </div>
+  <div class="form-group">
+    <label for="modelTitleController">Titel-Kontrolleur</label>
+    <select id="modelTitleController">
+      <option>ChatGPT 4.1 mini</option>
+      <option>ChatGPT 5 mini</option>
+      <option>Claude Sonnet 4</option>
+      <option>Gemini 2.5 Pro</option>
+    </select>
+  </div>
+</div>
 
-          <div class="grid grid-3">
-            <div class="form-group">
-              <label for="modelTitleGenerator">Titel-Generator</label>
-              <select id="modelTitleGenerator">
-                <option>ChatGPT 5 mini</option>
-                <option>Gemini 2.5 Flash</option>
-                <option>Gemini 2.5 Pro</option>
-                <option>Claude Sonnet 4</option>
-                <option>ChatGPT o4 mini</option>
-                <option>ChatGPT 4.1 mini</option>
-              </select>
-            </div>
-            <div class="form-group">
-              <label for="modelTitleController">Titel-Kontrolle</label>
-              <select id="modelTitleController">
-                <option>ChatGPT 4.1 mini</option>
-                <option>ChatGPT 5 mini</option>
-                <option>Claude Sonnet 4</option>
-                <option>Gemini 2.5 Pro</option>
-              </select>
-            </div>
-            <div class="form-group">
-              <label for="modelSeoStrategist">SEO-Stratege</label>
-              <select id="modelSeoStrategist">
-                <option>Gemini 2.5 Pro</option>
-                <option>ChatGPT o4 mini</option>
-                <option>Claude Sonnet 4</option>
-              </select>
-            </div>
-          </div>
+          <!-- Modelle – Zeile 2: Stratege – Autor – Redakteur – Auditor -->
+<div class="grid" style="grid-template-columns: repeat(4, 1fr); gap: 12px;">
+  <div class="form-group">
+    <label for="modelSeoStrategist">Stratege</label>
+    <select id="modelSeoStrategist">
+      <option>Gemini 2.5 Pro</option>
+      <option>ChatGPT o4 mini</option>
+      <option>Claude Sonnet 4</option>
+    </select>
+  </div>
+  <div class="form-group">
+    <label for="modelMicroTexter">Autor</label>
+    <select id="modelMicroTexter">
+      <option>Gemini 2.5 Flash</option>
+      <option>ChatGPT 5 mini</option>
+      <option>Claude Sonnet 3.5</option>
+    </select>
+  </div>
+  <div class="form-group">
+    <label for="modelSeoVeredler">Redakteur</label>
+    <select id="modelSeoVeredler">
+      <option>Claude Sonnet 4</option>
+      <option>ChatGPT 4.1</option>
+      <option>Gemini 2.5 Pro</option>
+    </select>
+  </div>
+  <div class="form-group">
+    <label for="modelSeoAuditor">Auditor</label>
+    <select id="modelSeoAuditor">
+      <option>ChatGPT o4 mini</option>
+      <option>ChatGPT 4.1</option>
+      <option>Gemini 2.5 Pro</option>
+    </select>
+  </div>
+</div>
 
-          <div class="grid grid-3">
-            <div class="form-group">
-              <label for="modelMicroTexter">Mikro-Texter</label>
-              <select id="modelMicroTexter">
-                <option>Gemini 2.5 Flash</option>
-                <option>ChatGPT 5 mini</option>
-                <option>Claude Sonnet 3.5</option>
-              </select>
-            </div>
-            <div class="form-group">
-              <label for="modelSeoVeredler">SEO-Veredler</label>
-              <select id="modelSeoVeredler">
-                <option>Claude Sonnet 4</option>
-                <option>ChatGPT 4.1</option>
-                <option>Gemini 2.5 Pro</option>
-              </select>
-            </div>
-            <div class="form-group">
-              <label for="modelSeoAuditor">SEO-Auditor</label>
-              <select id="modelSeoAuditor">
-                <option>ChatGPT o4 mini</option>
-                <option>ChatGPT 4.1</option>
-                <option>Gemini 2.5 Pro</option>
-              </select>
-            </div>
-          </div>
 
           <div class="actions">
             <button id="generateBtn" type="button" class="btn btn-primary">Titel generieren</button>
