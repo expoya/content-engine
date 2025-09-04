@@ -8,6 +8,7 @@
   --green:#18a058;
   --green-600:#12864b;
   --green-50:#e9f7ef;
+  --placeholder:#9aa8a2;
   --shadow:0 10px 25px rgba(0,0,0,0.06);
 }
 
@@ -56,7 +57,7 @@ input:not([type=range]):focus,select:focus,textarea:focus{border-color:var(--gre
 textarea{resize:vertical; min-height:42px}
 
 /* Einheitliche Placeholder */
-input::placeholder, textarea::placeholder{font:inherit;color:var(--text);opacity:1}
+input::placeholder, textarea::placeholder{font:inherit;color:var(--placeholder);opacity:1}
 
 /* Grids */
 .grid{display:grid; gap:12px}
