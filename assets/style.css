@@ -1,4 +1,3 @@
-/* Light theme with Expoya-green accents */
 :root{
   --bg:#f7faf9;
   --panel:#ffffff;
@@ -40,7 +39,7 @@ body{
 .form-group{display:flex;flex-direction:column;gap:8px;margin-bottom:12px;min-width:0}
 label{font-weight:600;font-size:13px;color:var(--muted)}
 
-/* WICHTIG: Range-Inputs aus der generischen Input-Regel ausnehmen */
+/* exclude range from generic input rule */
 input:not([type=range]),select,textarea{
   width:100%;
   background:#fff;
@@ -54,54 +53,26 @@ input:not([type=range]),select,textarea{
   outline:none;
 }
 input:not([type=range]):focus,select:focus,textarea:focus{border-color:var(--green); box-shadow:0 0 0 3px var(--green-50)}
-textarea{resize:vertical; min-height:42px}
 
-/* Einheitliche Placeholder */
-input::placeholder, textarea::placeholder{font:inherit;color:var(--placeholder);opacity:1}
+/* Textareas autogrow: keine Scrollbalken, wir steuern Höhe via JS */
+textarea{resize:none; overflow:hidden; min-height:42px}
 
-/* Grids */
+input::placeholder, textarea::placeholder{font:inherit; color:var(--placeholder); opacity:1}
+
 .grid{display:grid; gap:12px}
 .grid-2{grid-template-columns:1fr 1fr}
 .grid-3{grid-template-columns:1fr 1fr 1fr}
 @media (max-width:900px){.grid-2,.grid-3{grid-template-columns:1fr}}
 
-/* === Sliders (sauber, ohne doppelten Rahmen) === */
+/* Sliders */
 .sliders-row .form-group > label{ text-align:center }
 .sliders-row .range-val{ text-align:center; font-size:12px; color:var(--muted) }
-
-/* Basis-Reset für Range */
-.sliders-row input[type=range]{
-  -webkit-appearance:none; appearance:none;
-  width:100%;
-  background:transparent;
-  border:none; padding:0; margin:0;
-  height:24px; /* Click-Fläche */
-}
-
-/* Track (hell) */
-.sliders-row input[type=range]::-webkit-slider-runnable-track{
-  height:8px; background:#eef5f2; border-radius:999px
-}
-.sliders-row input[type=range]::-moz-range-track{
-  height:8px; background:#eef5f2; border-radius:999px
-}
-
-/* Progress (Firefox) */
-.sliders-row input[type=range]::-moz-range-progress{
-  height:8px; background:var(--green); border-radius:999px
-}
-
-/* Thumb */
-.sliders-row input[type=range]::-webkit-slider-thumb{
-  -webkit-appearance:none; appearance:none;
-  width:18px; height:18px; border-radius:50%;
-  background:var(--green); border:2px solid #fff;
-  margin-top:-5px; /* vertikal zentriert zum 8px Track */
-}
-.sliders-row input[type=range]::-moz-range-thumb{
-  width:18px; height:18px; border-radius:50%;
-  background:var(--green); border:2px solid #fff;
-}
+.sliders-row input[type=range]{ -webkit-appearance:none; appearance:none; width:100%; background:transparent; border:none; padding:0; margin:0; height:24px }
+.sliders-row input[type=range]::-webkit-slider-runnable-track{ height:8px; background:#eef5f2; border-radius:999px }
+.sliders-row input[type=range]::-moz-range-track{ height:8px; background:#eef5f2; border-radius:999px }
+.sliders-row input[type=range]::-moz-range-progress{ height:8px; background:var(--green); border-radius:999px }
+.sliders-row input[type=range]::-webkit-slider-thumb{ -webkit-appearance:none; appearance:none; width:18px; height:18px; border-radius:50%; background:var(--green); border:2px solid #fff; margin-top:-5px }
+.sliders-row input[type=range]::-moz-range-thumb{ width:18px; height:18px; border-radius:50%; background:var(--green); border:2px solid #fff }
 
 /* Segmented Controls – zentriert */
 .segwrap{ align-items:center }
