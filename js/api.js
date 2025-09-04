@@ -29,23 +29,71 @@ export async function startTitleJob(payload) {
 }
 
 export async function pollTitleJob(jobId) {
-  const url = `${TITLE_POLL_URL}${encodeURIComponent(jobId)}`;
+  // Cache-Busting gegen CDN/Proxy
+  const url = `${TITLE_POLL_URL}${encodeURIComponent(jobId)}&ts=${Date.now()}`;
+
+  // Helper: Antwort in { status, titles, raw } normalisieren
+  const normalize = async (res) => {
+    if (res.status === 204) return { status: 'running', titles: [], raw: null };
+    const ct = res.headers.get('content-type') || '';
+    if (!res.ok) {
+      const text = await res.text().catch(()=> '');
+      const err  = new Error(`HTTP ${res.status} ${res.statusText} @ ${res.url}\n${text}`);
+      err.status = res.status;
+      throw err;
+    }
+    let data;
+    if (ct.includes('application/json')) {
+      data = await res.json();
+    } else {
+      const text = await res.text();
+      try { data = JSON.parse(text); } catch { data = null; }
+    }
+    if (!data) return { status: 'running', titles: [], raw: null };
+
+    // Mögliche Felder extrahieren
+    const pick = (...paths) => {
+      for (const p of paths) {
+        const segs = p.split('.');
+        let cur = data;
+        let ok = true;
+        for (const s of segs) {
+          if (cur && Object.prototype.hasOwnProperty.call(cur, s)) cur = cur[s];
+          else { ok = false; break; }
+        }
+        if (ok) return cur;
+      }
+      return undefined;
+    };
+
+    const status =
+      (pick('status') || pick('data.status') || pick('result.status') || '').toString().toLowerCase() || 'running';
+
+    const titles =
+      pick('titles') || pick('data.titles') || pick('result.titles') || pick('0.titles') || [];
+
+    return { status, titles: Array.isArray(titles) ? titles : [], raw: data };
+  };
 
   try {
-    // GET: KEINE HEADERS setzen -> keine Preflight
-    return await fetchJSON(url, { method: "GET" });
+    // GET ohne Header → keine Preflight, kein Credentials
+    const res = await fetch(url, { method: 'GET', cache: 'no-store' });
+    return await normalize(res);
   } catch (e) {
-    // Falls dein Poll-Webhook POST erwartet (oder GET 404/405 liefert), probieren wir POST.
+    // Fallback: Manche Workflows erwarten POST fürs Polling
     if (e.status === 404 || e.status === 405) {
-      return await fetchJSON(TITLE_POLL_URL.replace(/\?.*$/, ""), {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
+      const postUrl = TITLE_POLL_URL.replace(/\?.*$/, '');
+      const res = await fetch(postUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ jobId }),
       });
+      return await normalize(res);
     }
     throw e;
   }
 }
+
 
 // (optional – falls du den Text-Flow nutzt)
 export async function startTextJob(payload) {
