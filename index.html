@@ -6,10 +6,6 @@
   <title>Expoya – AI Content Engine</title>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="assets/style.css" />
-  <script>
-    /* Optional: hier kannst du deine n8n-Endpoints setzen, ansonsten in js/api.js */
-    // window.__N8N__ = { TITLE_START_URL:"...", TITLE_POLL_URL:"...", TEXT_START_URL:"...", TEXT_POLL_URL:"..." };
-  </script>
 </head>
 <body>
   <div class="app-shell">
@@ -63,16 +59,12 @@
             </div>
           </div>
 
-          <!-- Zeile 4: Produkte/DL -->
-          <div class="grid">
+          <!-- Zeile 4: Produkte/DL + Keywordliste NEBENEINANDER -->
+          <div class="grid grid-2">
             <div class="form-group">
               <label for="produkte">Produkte / Dienstleistungen</label>
               <textarea id="produkte" rows="1" placeholder="z. B. Küchen; Esstische; Maßmöbel"></textarea>
             </div>
-          </div>
-
-          <!-- Zeile 5: Keywordliste -->
-          <div class="grid">
             <div class="form-group">
               <label for="keywords">Keywordliste</label>
               <textarea id="keywords" rows="1" placeholder="z. B. Tischlerei Linz; Massivholz Tisch; Küchenstudio Linz"></textarea>
@@ -98,39 +90,36 @@
             </div>
           </div>
 
-          <!-- Segmented Controls -->
-        <!-- Segmented Controls: 3 in einer Zeile -->
-<div class="grid grid-3">
-  <div class="form-group segwrap">
-    <div class="seg-label">Ortsbezug</div>
-    <div class="segmented" role="radiogroup">
-      <input type="radio" id="ort-ohne" name="ortsbezug" value="ohne" checked><label for="ort-ohne">ohne</label>
-      <input type="radio" id="ort-exakt" name="ortsbezug" value="exakt"><label for="ort-exakt">exakt</label>
-      <input type="radio" id="ort-umland" name="ortsbezug" value="umland"><label for="ort-umland">Umland</label>
-      <input type="radio" id="ort-umland-stadtteile" name="ortsbezug" value="umland-stadtteile"><label for="ort-umland-stadtteile">Umland+Stadtteile</label>
-    </div>
-  </div>
+          <!-- Segmented Controls: 3 in einer Zeile -->
+          <div class="grid grid-3">
+            <div class="form-group segwrap">
+              <div class="seg-label">Ortsbezug</div>
+              <div class="segmented" role="radiogroup">
+                <input type="radio" id="ort-ohne" name="ortsbezug" value="ohne" checked><label for="ort-ohne">ohne</label>
+                <input type="radio" id="ort-exakt" name="ortsbezug" value="exakt"><label for="ort-exakt">exakt</label>
+                <input type="radio" id="ort-umland" name="ortsbezug" value="umland"><label for="ort-umland">Umland</label>
+                <input type="radio" id="ort-umland-stadtteile" name="ortsbezug" value="umland-stadtteile"><label for="ort-umland-stadtteile">Umland+Stadtteile</label>
+              </div>
+            </div>
 
-  <div class="form-group segwrap">
-    <div class="seg-label">Ansprache</div>
-    <div class="segmented" role="radiogroup">
-      <input type="radio" id="ans-neutral" name="ansprache" value="neutral" checked><label for="ans-neutral">neutral</label>
-      <input type="radio" id="ans-sie" name="ansprache" value="sie"><label for="ans-sie">Sie</label>
-      <input type="radio" id="ans-du" name="ansprache" value="du"><label for="ans-du">Du</label>
-    </div>
-  </div>
+            <div class="form-group segwrap">
+              <div class="seg-label">Ansprache</div>
+              <div class="segmented" role="radiogroup">
+                <!-- Neutral entfernt; Default = Du -->
+                <input type="radio" id="ans-sie" name="ansprache" value="sie"><label for="ans-sie">Sie</label>
+                <input type="radio" id="ans-du" name="ansprache" value="du" checked><label for="ans-du">Du</label>
+              </div>
+            </div>
 
-  <div class="form-group segwrap">
-    <div class="seg-label">Branding</div>
-    <div class="segmented" role="radiogroup">
-      <input type="radio" id="brand-kein" name="branding" value="kein" checked><label for="brand-kein">kein</label>
-      <input type="radio" id="brand-dezent" name="branding" value="dezent"><label for="brand-dezent">dezent</label>
-      <input type="radio" id="brand-moderat" name="branding" value="moderat"><label for="brand-moderat">moderat</label>
-    </div>
-  </div>
-</div>
-
-
+            <div class="form-group segwrap">
+              <div class="seg-label">Branding</div>
+              <div class="segmented" role="radiogroup">
+                <input type="radio" id="brand-kein" name="branding" value="kein" checked><label for="brand-kein">kein</label>
+                <input type="radio" id="brand-dezent" name="branding" value="dezent"><label for="brand-dezent">dezent</label>
+                <input type="radio" id="brand-moderat" name="branding" value="moderat"><label for="brand-moderat">moderat</label>
+              </div>
+            </div>
+          </div>
 
           <!-- Model-Preset -->
           <div class="form-group">
@@ -143,7 +132,7 @@
             </select>
           </div>
 
-          <!-- Model-Auswahl (2 Reihen à 3 Spalten wie früher) -->
+          <!-- Model-Auswahl (2 Reihen à 3 Spalten) -->
           <div class="grid grid-3">
             <div class="form-group">
               <label for="modelTitleGenerator">Titel-Generator</label>
