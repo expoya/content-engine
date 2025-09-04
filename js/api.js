@@ -140,16 +140,91 @@ export async function startTextJob(payload) {
 }
 
 export async function pollTextJob(jobId) {
-  const url = `${TEXT_POLL_URL}${encodeURIComponent(jobId)}`;
+  const url = `${TEXT_POLL_URL}${encodeURIComponent(jobId)}&ts=${Date.now()}`;
+
+  const toLowerKeyObject = (obj) => {
+    if (!obj || typeof obj !== 'object' || Array.isArray(obj)) return obj;
+    const out = {};
+    for (const k of Object.keys(obj)) out[k.toLowerCase()] = obj[k];
+    return out;
+  };
+
+  const normalize = (data) => {
+    // Nichts/leer -> running
+    if (!data) return { status: 'running', text: '', raw: null };
+
+    // n8n gibt oft [ { ... } ]
+    const root = Array.isArray(data) ? (data[0] ?? {}) : data;
+
+    // Case-insensitive Zugriff vorbereiten
+    const low = toLowerKeyObject(root);
+
+    // Status: "Status" oder "status"
+    const status = String(
+      (low && (low.status)) || 'running'
+    ).toLowerCase();
+
+    // Textquelle: "Text" (groß), "text", "markdown", "result" etc.
+    let src = root.Text ?? root.text ?? root.markdown ?? root.result ??
+              (low && (low.text || low.markdown || low.result));
+
+    // Falls Quelle selbst im ersten Array steckt (zur Sicherheit)
+    if (src === undefined && Array.isArray(data)) {
+      const first = data[0] || {};
+      src = first.Text ?? first.text ?? first.markdown ?? first.result;
+    }
+
+    const parseMaybe = (v) => {
+      if (!v) return '';
+      if (typeof v === 'string') {
+        const s = v.trim();
+        if (!s) return '';
+        // häufig: JSON-String wie {"text":"..."}
+        try {
+          const j = JSON.parse(s);
+          return parseMaybe(j);
+        } catch {
+          return s; // war reiner Markdown/Text
+        }
+      }
+      if (v && typeof v === 'object') {
+        // übliche Keys in Objekten
+        return v.text || v.markdown || v.content || '';
+      }
+      return '';
+    };
+
+    const text = parseMaybe(src);
+
+    return { status, text, raw: data };
+  };
+
   try {
-    return await fetchJSON(url, { method: "GET" });
+    // GET ohne Header, cache-busting
+    const res = await fetch(url, { method: 'GET', cache: 'no-store' });
+    if (res.status === 204) return { status: 'running', text: '', raw: null };
+
+    const rawText = await res.text().catch(() => '');
+    const data = rawText && rawText.trim()
+      ? ( (()=>{ try { return JSON.parse(rawText); } catch { return rawText; } })() )
+      : null;
+
+    return normalize(data);
   } catch (e) {
+    // Fallback: einige Workflows erlauben nur POST fürs Polling
     if (e.status === 404 || e.status === 405) {
-      return await fetchJSON(TEXT_POLL_URL.replace(/\?.*$/, ""), {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
+      const postUrl = TEXT_POLL_URL.replace(/\?.*$/, '');
+      const res = await fetch(postUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ jobId }),
       });
+      if (res.status === 204) return { status: 'running', text: '', raw: null };
+      const rawText = await res.text().catch(() => '');
+      const data = rawText && rawText.trim()
+        ? ( (()=>{ try { return JSON.parse(rawText); } catch { return rawText; } })() )
+        : null;
+      return normalize(data);
     }
     throw e;
   }
