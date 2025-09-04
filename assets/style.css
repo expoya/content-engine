@@ -28,7 +28,7 @@ body{
 
 /* ---- Layout: zwei gleich breite Spalten ---- */
 .container{
-  max-width:1400px;
+  max-width:1680px;
   margin:24px auto;
   padding:0 16px;
   display:grid;
@@ -86,7 +86,12 @@ input:not([type=range]):focus,select:focus,textarea:focus{
 textarea{resize:none; overflow:hidden; min-height:42px}
 
 /* 1-zeilige Autogrow-Variante (z. B. „Vorgaben & Ausschlüsse“) */
-textarea.autogrow{ resize:none; overflow:hidden; line-height:1.5; min-height:26px }
+textarea.autogrow{
+  resize:none;
+  overflow:hidden;
+  line-height:1.4;
+  min-height:42px; 
+}
 
 input::placeholder, textarea::placeholder{font:inherit; color:var(--placeholder); opacity:1}
 
