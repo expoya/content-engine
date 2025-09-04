@@ -26,6 +26,34 @@ function ortValueToId(val){
   }
 }
 
+export function buildCommonPayload() {
+  const cd = state.companyData || {};
+
+  // Labels aus ui-form.js verwenden
+  const t = mapSliderLabel('diversity_level', cd.diversity_level);
+  const d = mapSliderLabel('detail_level',    cd.detail_level);
+  const s = mapSliderLabel('style_bias',      cd.style_bias);
+
+  const payload = {
+    ...cd,
+    agentModels: state.agentModels,
+    // Textuelle Slider-Felder (wie beim Title-Job)
+    'Tonalität':  t,
+    'Detailgrad': d,
+    'Schreibstil': s,
+    // Anweisungen für Branding & Ortsbezug
+    instructions: buildInstructions(cd),
+  };
+
+  // die numerischen Original-Slider nicht mehr mitsenden:
+  delete payload.diversity_level;
+  delete payload.detail_level;
+  delete payload.style_bias;
+
+  return payload;
+}
+
+
 /* ---------- instructions ---------- */
 function buildInstructions(cd){
   const brandingMap = {
