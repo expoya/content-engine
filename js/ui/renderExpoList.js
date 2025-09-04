@@ -5,6 +5,14 @@ import { renderMarkdownToHtml } from '../render.js';
 import { showToast } from '../ui-loader.js';
 import { buildCommonPayload } from '../ui-form.js';
 
+function autogrow(el){
+  if (!el) return;
+  el.style.height = 'auto';
+  // kleine Obergrenze, damit es nicht “unendlich” wird
+  const max = 600;
+  el.style.height = Math.min(max, el.scrollHeight) + 'px';
+}
+
 export function renderExpoList(){
   const ul = document.getElementById('expoList');
   if (!ul) return;
@@ -19,82 +27,72 @@ export function renderExpoList(){
     return;
   }
 
+  // Speicher für Markdown & Notizen initialisieren
+  state.textsMd  = state.textsMd  || [];
+  state.expoNotes = state.expoNotes || [];
+
   state.titles.forEach((title, idx) => {
     const li     = document.createElement('li');  li.className = 'expo-akkordeon';
     const header = document.createElement('div'); header.className = 'expo-akk-header';
     const index  = document.createElement('div'); index.className  = 'expo-akk-index';  index.textContent = String(idx + 1).padStart(2,'0');
     const t      = document.createElement('div'); t.className      = 'expo-akk-titel';   t.textContent = title;
     const expand = document.createElement('button'); expand.className = 'btn-icon btn-expand'; expand.textContent = '▼';
-
     header.append(index, t, expand);
 
     const body   = document.createElement('div'); body.className   = 'expo-akk-body';
 
-    // Feld für Zusatzhinweise
+    // --- Vorgaben & Ausschlüsse (1-zeilig, autogrow) ---
+    const noteWrap = document.createElement('div');
+    noteWrap.className = 'form-group';
     const noteLabel = document.createElement('label');
     noteLabel.setAttribute('for', `note-${idx}`);
     noteLabel.textContent = 'Vorgaben & Ausschlüsse';
-
     const note = document.createElement('textarea');
     note.id = `note-${idx}`;
-    note.placeholder = 'Markdown erlaubt (optional)';
-    note.rows = 3;
+    note.className = 'autogrow';
+    note.placeholder = 'spezielle Anweisungen hier eingeben';
+    note.rows = 1;
     note.style.width = '100%';
+    note.value = state.expoNotes[idx] || '';
+    // autogrow live
+    note.addEventListener('input', ()=>{ state.expoNotes[idx] = note.value; autogrow(note); });
+    setTimeout(()=>autogrow(note)); // initial
+    noteWrap.append(noteLabel, note);
 
-    // Button "Text generieren"
+    // --- Markdown-Editor + Vorschau ---
+    const editorWrap = document.createElement('div');
+    editorWrap.className = 'form-group';
+    const mdLabel = document.createElement('label');
+    mdLabel.setAttribute('for', `md-${idx}`);
+    mdLabel.textContent = 'Text (Markdown, bearbeitbar)';
+    const mdEditor = document.createElement('textarea');
+    mdEditor.id = `md-${idx}`;
+    mdEditor.className = 'autogrow';
+    mdEditor.rows = 8;
+    mdEditor.style.width = '100%';
+    mdEditor.placeholder = 'Der generierte Text erscheint hier und kann bearbeitet werden …';
+    mdEditor.value = state.textsMd[idx] || '';
+    // Live-Preview
+    const prev = document.createElement('div');
+    prev.className = 'preview-box';
+    prev.innerHTML = state.texts[idx] || '';
+    mdEditor.addEventListener('input', ()=>{
+      state.textsMd[idx] = mdEditor.value;
+      const html = renderMarkdownToHtml(mdEditor.value || '');
+      state.texts[idx] = html;
+      prev.innerHTML = html;
+      try { localStorage.setItem('expoya_ce_state_v2', JSON.stringify(state)); } catch {}
+      autogrow(mdEditor);
+    });
+    setTimeout(()=>autogrow(mdEditor));
+
+    editorWrap.append(mdLabel, mdEditor);
+
+    // --- Button "Text generieren" ---
     const gen = document.createElement('button');
     gen.className = 'btn btn-primary';
     gen.textContent = 'Text generieren';
 
-    // Vorschau
-    const prev = document.createElement('div');
-    prev.className = 'preview-box';
-    prev.innerHTML = state.texts?.[idx] || '';
-
-    // Helper: robust aus verschiedenen Antwortformen Markdown/Text extrahieren
-    const extractMarkdown = (res) => {
-      if (!res) return '';
-      const tryGet = (...paths) => {
-        for (const p of paths) {
-          const segs = p.split('.');
-          let cur = res, ok = true;
-          for (const s of segs) {
-            if (cur && Object.prototype.hasOwnProperty.call(cur, s)) cur = cur[s];
-            else { ok = false; break; }
-          }
-          if (ok && (typeof cur === 'string' || typeof cur === 'object')) return cur;
-        }
-        return undefined;
-      };
-
-      // Häufige Felder zuerst
-      let out = tryGet('markdown','text','result','data.markdown','data.text','payload.text','payload.markdown','0.markdown','0.text');
-      if (!out) return '';
-
-      // Falls es ein JSON-String ist -> parsen
-      if (typeof out === 'string') {
-        const s = out.trim();
-        if (!s) return '';
-        try {
-          const j = JSON.parse(s);
-          // häufige Keys im JSON
-          if (typeof j === 'string') return j;
-          if (j && typeof j === 'object') {
-            return j.markdown || j.text || j.content || '';
-          }
-        } catch (_) {
-          return s; // war reiner Markdown/Text
-        }
-      }
-
-      if (out && typeof out === 'object') {
-        return out.markdown || out.text || out.content || '';
-      }
-
-      return '';
-    };
-
-    // Klick-Handler
     gen.onclick = async () => {
       try{
         gen.disabled = true;
@@ -103,7 +101,7 @@ export function renderExpoList(){
         // Gemeinsame Payload wie beim Title-Job
         const base = buildCommonPayload();
 
-        // Zusatzfelder für den Text-Job gemäß Anforderung
+        // Final für Text-Job: Titel + Vorgaben/Ausschlüsse
         const payload = {
           ...base,
           'Titel': title,
@@ -118,8 +116,9 @@ export function renderExpoList(){
         const isDone = (s) => ['done','success','completed','finished','ready'].includes(String(s||'').toLowerCase());
         const isFailed = (s) => ['failed','error'].includes(String(s||'').toLowerCase());
 
-        let delay = 2500;
-        const MAX = 20 * 60 * 1000;  // 20 Minuten
+        // leicht staffeln, wenn viele gleichzeitig gestartet werden
+        let delay = 2500 + (idx % 5) * 200;
+        const MAX = 20 * 60 * 1000;
         const started = Date.now();
 
         while (true) {
@@ -127,13 +126,28 @@ export function renderExpoList(){
 
           const res = await pollTextJob(jobId);
           const status = String(res?.status || '').toLowerCase();
-          const md = extractMarkdown(res);
+
+          // Wir unterstützen sowohl res.text (plain/md) als auch res.markdown/res.result (falls JSON-kodiert)
+          let md = res?.text || res?.markdown || res?.result || '';
+          if (typeof md === 'object') {
+            md = md.text || md.markdown || md.content || '';
+          }
+          if (typeof md === 'string') {
+            // Falls ein JSON-String zurückkommt: versuchen zu parsen
+            const s = md.trim();
+            if (s.startsWith('{') || s.startsWith('[')) {
+              try {
+                const j = JSON.parse(s);
+                md = (j && (j.text || j.markdown || j.content)) || md;
+              } catch {}
+            }
+          }
 
           if (isDone(status) || md) {
             const html = renderMarkdownToHtml(md || '');
-            state.texts = state.texts || [];
-            state.texts[idx] = html;
-            prev.innerHTML = html;
+            state.textsMd[idx] = md || '';
+            state.texts[idx]   = html;
+            prev.innerHTML     = html;
             try { localStorage.setItem('expoya_ce_state_v2', JSON.stringify(state)); } catch {}
             showToast(md ? 'Text fertig' : 'Job fertig, aber kein Text erkannt');
             break;
@@ -157,7 +171,9 @@ export function renderExpoList(){
       }
     };
 
-    body.append(noteLabel, note, gen, prev);
+    // Body-Reihenfolge
+    body.append(noteWrap, gen, editorWrap, prev);
+
     li.append(header, body);
     expand.onclick = () => li.classList.toggle('open');
     ul.appendChild(li);
