@@ -210,32 +210,42 @@ payload.instructions = buildInstructions(state.companyData);
     const startRes = await startTitleJob(payload);
     const jobId = startRes?.jobId || startRes?.id;
     if (!jobId) throw new Error('Kein jobId vom Webhook erhalten.');
-    const started = Date.now();
-    const MAX = 15 * 60 * 1000;
-    let delay = 2500;
+   const started = Date.now();
+const MAX = 20 * 60 * 1000;   // 20 Minuten
+let delay = 2500;
 
-    while (true){
-      const elapsed = Date.now() - started;
-      if (elapsed > MAX) throw new Error('Zeitüberschreitung beim Titel-Polling.');
-      updateLoader(`Pollen … (${Math.ceil(elapsed/1000)}s)`);
+const isDone = (s) => ['done','success','completed','finished','ready'].includes(String(s||'').toLowerCase());
+const isFailed = (s) => ['failed','error'].includes(String(s||'').toLowerCase());
 
-      const res = await pollTitleJob(jobId);
-      const status = res?.status || res?.[0]?.status || 'running';
-      const titles = res?.titles || res?.[0]?.titles || [];
+while (true) {
+  const elapsed = Date.now() - started;
+  if (elapsed > MAX) throw new Error('Zeitüberschreitung beim Titel-Polling.');
 
-      if (status === 'done' || (Array.isArray(titles) && titles.length)){
-        state.titles = Array.from(new Set(titles.map(t => String(t).trim()).filter(Boolean)));
-        state.texts = new Array(state.titles.length).fill('');
-        localStorage.setItem('expoya_ce_state_v2', JSON.stringify(state));
-        hideLoader();
-        renderExpoList();
-        notify('Titel fertig', `Es wurden ${state.titles.length} Titel generiert.`);
-        return;
-      }
-      if (status === 'failed') throw new Error(res?.message || 'Titel-Job fehlgeschlagen.');
-      await new Promise(r => setTimeout(r, delay));
-      delay = Math.min(15000, Math.round(delay * 1.15));
-    }
+  updateLoader(`Pollen … (${Math.ceil(elapsed/1000)}s)`);
+
+  const res = await pollTitleJob(jobId); // liefert jetzt { status, titles, raw }
+  const status = res?.status || 'running';
+  const titles = Array.isArray(res?.titles) ? res.titles : [];
+
+  if (isDone(status) || titles.length) {
+    state.titles = Array.from(new Set(titles.map(t => String(t).trim()).filter(Boolean)));
+    state.texts  = new Array(state.titles.length).fill('');
+    localStorage.setItem('expoya_ce_state_v2', JSON.stringify(state));
+    hideLoader(); renderExpoList();
+    notify('Titel fertig', `Es wurden ${state.titles.length} Titel generiert.`);
+    break;
+  }
+
+  if (isFailed(status)) {
+    const msg = (res && res.raw && (res.raw.message || res.raw.error)) || 'Titel-Job fehlgeschlagen.';
+    throw new Error(msg);
+  }
+
+  // sanftes Backoff, Deckel 20s
+  await new Promise(r => setTimeout(r, delay));
+  delay = Math.min(20000, Math.round(delay * 1.2));
+}
+
   } catch(e){
     console.error(e);
     showToast(e.message || 'Fehler beim Generieren der Titel');
