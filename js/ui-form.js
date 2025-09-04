@@ -193,7 +193,19 @@ async function startTitlesFlow(btn){
   showLoader('Titel werden generiert …');
   try{
     const payload = { ...state.companyData, agentModels: state.agentModels };
-    payload.instructions = buildInstructions(state.companyData);
+
+// Slider-Werte als Text-Felder mitschicken (statt diversity/detail/style)
+payload['Tonalität']  = mapSliderLabel('diversity_level', state.companyData.diversity_level);
+payload['Detailgrad'] = mapSliderLabel('detail_level',    state.companyData.detail_level);
+payload['Schreibstil']= mapSliderLabel('style_bias',      state.companyData.style_bias);
+
+// Alte numerischen Keys entfernen (falls vorhanden)
+delete payload.diversity_level;
+delete payload.detail_level;
+delete payload.style_bias;
+
+payload.instructions = buildInstructions(state.companyData);
+
 
     const startRes = await startTitleJob(payload);
     const jobId = startRes?.jobId || startRes?.id;
