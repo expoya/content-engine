@@ -85,6 +85,8 @@ input::placeholder, textarea::placeholder{font:inherit; color:var(--placeholder)
 .segmented input{display:none}
 .segmented label{ padding:6px 10px; border-radius:999px; border:1px solid transparent; font-size:13px; cursor:pointer; white-space:nowrap }
 .segmented input:checked + label{ background:var(--green); color:#fff; border-color:var(--green) }
+.segmented.compact { padding:4px; gap:4px; }
+.segmented.compact label{ font-size:12px; padding:4px 8px; }
 
 /* Buttons */
 .actions,.export-actions{display:flex;gap:10px;align-items:center;margin-top:4px;flex-wrap:wrap}
