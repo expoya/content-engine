@@ -1,4 +1,4 @@
-// js/ui/renderExpoList.js
+// js/ui/renderExpoList.js.
 import { state } from '../state.js';
 import { startTextJob, pollTextJob } from '../api.js';
 import { renderMarkdownToHtml } from '../render.js';
