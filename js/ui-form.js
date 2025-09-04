@@ -9,12 +9,44 @@ import { primeAudioOnUserGesture, notify } from './ui/notifier.js';
 const byId = (id) => document.getElementById(id);
 const TEXTAREAS = ['regionen','zielgruppen','produkte','keywords','attribute','zielsetzung'];
 
+/* ---------- helpers ---------- */
 function autogrow(el){
   if (!el) return;
   el.style.height = 'auto';
   el.style.height = el.scrollHeight + 'px';
 }
 
+function ortValueToId(val){
+  switch((val||'').toLowerCase()){
+    case 'ohne': return 'ort-ohne';
+    case 'exakt': return 'ort-exakt';
+    case 'erweitert': return 'ort-erweitert';
+    case 'erweitert+vertieft': return 'ort-erweitert-vertieft';
+    default: return 'ort-ohne';
+  }
+}
+
+/* ---------- instructions ---------- */
+function buildInstructions(cd){
+  const brandingMap = {
+    'kein'   : 'Verwende den Unternehmensnamen überhaupt nicht. Erstelle einen rein informativen Text.',
+    'dezent' : 'Verwende den Unternehmensnamen dezent in einer etwaigen Einleitung oder im Fazit.',
+    'moderat': 'Verwende den Unternehmensnamen an 3–4 logischen Stellen im Text.'
+  };
+  const ortsMap = {
+    'ohne'               : 'Verwende keinen regionalen Ortsbezug in den Titeln oder Text.',
+    'exakt'              : 'Verwende, sofern sinnvoll im Kontext, genau die angegebenen Regionen/Orte/Städte in den Titeln oder Text.',
+    'erweitert'          : 'Verwende, sofern sinnvoll im Kontext, neben den angegebenen Regionen/Orte/Städte auch Nachbarn der exakt gleichen administrativen Ebene (z. B. „Linz“ → Wels, Marchtrenk, Leonding; „Oberösterreich“ → Niederösterreich, Salzburg) in den Titeln oder Text.',
+    'erweitert+vertieft' : 'Verwende, sofern sinnvoll im Kontext, neben den angegebenen Regionen/Orte/Städte auch Stadt-/Ortsteile auf der darunter liegenden administrativen Ebene und auch Nachbarn der exakt gleichen sowie der darunter liegenden administrativen Ebene (z. B. „Linz“ → Linz(Auwiesen, Ebelsberg, Urfahr…), Leonding(Alharting, Zaubertal…); „Oberösterreich“ → Oberösterreich(Vöcklabruck, Grieskirchen…), Niederösterreich(Amstetten, Baden…)).'
+  };
+
+  return {
+    branding: brandingMap[cd.branding || 'kein'],
+    ortsbezug: ortsMap[cd.ortsbezug || 'ohne']
+  };
+}
+
+/* ---------- state <-> form ---------- */
 function readFormIntoState() {
   const cd = (state.companyData = state.companyData || {});
   cd.firma           = byId('firma')?.value || '';
@@ -36,7 +68,7 @@ function readFormIntoState() {
   cd.detail_level    = Number(byId('detail_level')?.value || 3);
   cd.style_bias      = Number(byId('style_bias')?.value || 3);
 
-  // Modelle aus der UI lesen
+  // Modelle
   state.agentModels = {
     ...(state.agentModels || {}),
     titleGenerator  : byId('modelTitleGenerator')?.value,
@@ -60,7 +92,7 @@ function applyFormFromState() {
   if (byId('produkte')) byId('produkte').value = cd.produkte || '';
   if (byId('keywords')) byId('keywords').value = cd.keywords || '';
 
-  // Modelle zurückspielen (mit Defaults)
+  // Modelle (Defaults)
   if (byId('modelTitleGenerator'))  byId('modelTitleGenerator').value  = state.agentModels?.titleGenerator  || 'ChatGPT 5 mini';
   if (byId('modelTitleController')) byId('modelTitleController').value = state.agentModels?.titleController || 'ChatGPT 4.1 mini';
   if (byId('modelSeoStrategist'))   byId('modelSeoStrategist').value   = state.agentModels?.seoStrategist   || 'Gemini 2.5 Pro';
@@ -69,17 +101,14 @@ function applyFormFromState() {
   if (byId('modelSeoAuditor'))      byId('modelSeoAuditor').value      = state.agentModels?.seoAuditor      || 'ChatGPT o4 mini';
 
   // Radios
-  const ort = cd.ortsbezug || 'ohne';
-  const ans = cd.ansprache || 'du';
-  const br  = cd.branding  || 'kein';
-  const ortId = `ort-${ort}`;
-  const ansId = ans === 'sie' ? 'ans-sie' : 'ans-du';
-  const brId  = br === 'dezent' ? 'brand-dezent' : (br === 'moderat' ? 'brand-moderat' : 'brand-kein');
+  const ortId = ortValueToId(cd.ortsbezug || 'ohne');
+  const ansId = (cd.ansprache || 'du') === 'sie' ? 'ans-sie' : 'ans-du';
+  const brId  = cd.branding === 'dezent' ? 'brand-dezent' : (cd.branding === 'moderat' ? 'brand-moderat' : 'brand-kein');
   if (byId(ortId)) byId(ortId).checked = true;
   if (byId(ansId)) byId(ansId).checked = true;
   if (byId(brId))  byId(brId).checked  = true;
 
-  // Slider + Textareas autogrow initial
+  // Slider + autogrow initial
   const sliders = { diversity_level: cd.diversity_level || 3, detail_level: cd.detail_level || 3, style_bias: cd.style_bias || 3 };
   for (const [k, v] of Object.entries(sliders)) {
     if (byId(k)) byId(k).value = String(v);
@@ -90,9 +119,9 @@ function applyFormFromState() {
 
 /* ---------- Slider-Labels ---------- */
 const LABELS = {
-  diversity_level: ['Sehr nüchtern','Zurückhaltend','Neutral','Kreativ','Sehr kreativ'],
-  detail_level   : ['Sehr knapp','Kurz','Neutral','Detailreich','Sehr detailreich'],
-  style_bias     : ['Faktisch','Sachlich','Neutral','Emotional','Werblich']
+  diversity_level: ['Sehr formell','Eher formell','Neutral','Eher locker','Sehr locker'],
+  detail_level   : ['Sehr oberflächlich','Eher oberflächlich','Neutral','Eher detailreich','Sehr detailreich'],
+  style_bias     : ['Sehr faktisch','Eher faktisch','Neutral','Eher werblich','Sehr werblich']
 };
 function mapSliderLabel(key, val){
   const arr = LABELS[key] || ['1','2','3','4','5'];
@@ -125,7 +154,6 @@ function initPresets(){
 export async function initForm(){
   primeAudioOnUserGesture();
 
-  // Auto-grow für alle relevanten Textareas
   TEXTAREAS.forEach(id => {
     const el = byId(id);
     if (el){
@@ -137,7 +165,6 @@ export async function initForm(){
   wireSliders();
   initPresets();
 
-  // restore
   try {
     const raw = localStorage.getItem('expoya_ce_state_v2');
     if (raw) Object.assign(state, JSON.parse(raw));
@@ -145,25 +172,28 @@ export async function initForm(){
   applyFormFromState();
   if (Array.isArray(state.titles) && state.titles.length) renderExpoList();
 
-  // buttons
   const gen = byId('generateBtn');
   if (gen) gen.onclick = ()=> startTitlesFlow(gen);
   const clr = byId('clearBtn');
   if (clr) clr.onclick = ()=>{
     byId('mainForm').reset();
     byId('ort-ohne').checked    = true;
-    byId('ans-du').checked      = true;  // neutral entfernt -> Default Du
+    byId('ans-du').checked      = true;
     byId('brand-kein').checked  = true;
     wireSliders();
     TEXTAREAS.forEach(id=>{ const el = byId(id); if (el) autogrow(el); });
   };
 }
 
+/* ---------- Flow ---------- */
 async function startTitlesFlow(btn){
   readFormIntoState();
   showLoader('Titel werden generiert …');
   try{
-    const startRes = await startTitleJob({ ...state.companyData, agentModels: state.agentModels });
+    const payload = { ...state.companyData, agentModels: state.agentModels };
+    payload.instructions = buildInstructions(state.companyData);
+
+    const startRes = await startTitleJob(payload);
     const jobId = startRes?.jobId || startRes?.id;
     if (!jobId) throw new Error('Kein jobId vom Webhook erhalten.');
     const started = Date.now();
