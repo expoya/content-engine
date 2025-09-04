@@ -14,12 +14,11 @@
     </header>
 
     <main class="container">
-      <!-- LINKES PANEL: FORM -->
       <section class="panel panel-input">
         <h2>Einstellungen & Eingaben</h2>
 
         <form id="mainForm" autocomplete="off">
-          <!-- Zeile 1: Unternehmensname, #Expos, ContentSource_ID -->
+          <!-- Zeile 1 -->
           <div class="grid grid-3">
             <div class="form-group">
               <label for="firma">Unternehmensname</label>
@@ -35,7 +34,7 @@
             </div>
           </div>
 
-          <!-- Zeile 2: Attribute + Zielsetzung -->
+          <!-- Zeile 2 -->
           <div class="grid grid-2">
             <div class="form-group">
               <label for="attribute">Attribute</label>
@@ -47,7 +46,7 @@
             </div>
           </div>
 
-          <!-- Zeile 3: Regionen + Zielgruppen -->
+          <!-- Zeile 3 -->
           <div class="grid grid-2">
             <div class="form-group">
               <label for="regionen">Regionen</label>
@@ -59,7 +58,7 @@
             </div>
           </div>
 
-          <!-- Zeile 4: Produkte/DL + Keywordliste NEBENEINANDER -->
+          <!-- Zeile 4: Produkte + Keywords nebeneinander -->
           <div class="grid grid-2">
             <div class="form-group">
               <label for="produkte">Produkte / Dienstleistungen</label>
@@ -67,7 +66,7 @@
             </div>
             <div class="form-group">
               <label for="keywords">Keywordliste</label>
-              <textarea id="keywords" rows="1" placeholder="z. B. Tischlerei Linz; Massivholz Tisch; Küchenstudio Linz"></textarea>
+              <textarea id="keywords" rows="1" placeholder="z. B. Tischlerei Linz; Massivholz Tisch"></textarea>
             </div>
           </div>
 
@@ -90,22 +89,22 @@
             </div>
           </div>
 
-          <!-- Segmented Controls: 3 in einer Zeile -->
+          <!-- Segmented Controls -->
           <div class="grid grid-3">
             <div class="form-group segwrap">
               <div class="seg-label">Ortsbezug</div>
               <div class="segmented" role="radiogroup">
                 <input type="radio" id="ort-ohne" name="ortsbezug" value="ohne" checked><label for="ort-ohne">ohne</label>
                 <input type="radio" id="ort-exakt" name="ortsbezug" value="exakt"><label for="ort-exakt">exakt</label>
-                <input type="radio" id="ort-umland" name="ortsbezug" value="umland"><label for="ort-umland">Umland</label>
-                <input type="radio" id="ort-umland-stadtteile" name="ortsbezug" value="umland-stadtteile"><label for="ort-umland-stadtteile">Umland+Stadtteile</label>
+                <input type="radio" id="ort-erweitert" name="ortsbezug" value="erweitert"><label for="ort-erweitert">erweitert</label>
+                <!-- id ohne +, value mit + -->
+                <input type="radio" id="ort-erweitert-vertieft" name="ortsbezug" value="erweitert+vertieft"><label for="ort-erweitert-vertieft">erweitert+vertieft</label>
               </div>
             </div>
 
             <div class="form-group segwrap">
               <div class="seg-label">Ansprache</div>
               <div class="segmented" role="radiogroup">
-                <!-- Neutral entfernt; Default = Du -->
                 <input type="radio" id="ans-sie" name="ansprache" value="sie"><label for="ans-sie">Sie</label>
                 <input type="radio" id="ans-du" name="ansprache" value="du" checked><label for="ans-du">Du</label>
               </div>
@@ -121,7 +120,7 @@
             </div>
           </div>
 
-          <!-- Model-Preset -->
+          <!-- Presets & Modelle -->
           <div class="form-group">
             <label for="modelPreset">Modell-Preset</label>
             <select id="modelPreset">
@@ -132,7 +131,6 @@
             </select>
           </div>
 
-          <!-- Model-Auswahl (2 Reihen à 3 Spalten) -->
           <div class="grid grid-3">
             <div class="form-group">
               <label for="modelTitleGenerator">Titel-Generator</label>
@@ -198,7 +196,6 @@
         </form>
       </section>
 
-      <!-- RECHTES PANEL: OUTPUT -->
       <section class="panel panel-output">
         <h2>Expos</h2>
         <ul id="expoList" class="expo-list">
