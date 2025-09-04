@@ -1,36 +1,73 @@
 // js/api.js
-// Configure your existing n8n endpoints here or via window.__N8N__
-const CFG = window.__N8N__ || {};
+// Deine fixen Endpoints (aus dem alten Frontend)
 const TITLE_START_URL = "https://expoya.app.n8n.cloud/webhook/start-job";
 const TITLE_POLL_URL  = "https://expoya.app.n8n.cloud/webhook/get-job?jobId=";
-const TEXT_WEBHOOK_URL = "https://expoya.app.n8n.cloud/webhook/Text-Job-Starter"; 
+const TEXT_WEBHOOK_URL = "https://expoya.app.n8n.cloud/webhook/Text-Job-Starter";
 const TEXT_POLL_URL   = "https://expoya.app.n8n.cloud/webhook/text-get-job?jobId=";
-const API_KEY         = CFG.API_KEY || "";
 
-async function post(url, body){
-  const res = await fetch(url, {
-    method:'POST',
-    headers:{
-      'content-type':'application/json',
-      ...(API_KEY ? {'x-api-key': API_KEY} : {})
-    },
-    body: JSON.stringify(body || {})
-  });
+// --- Helpers ---
+async function fetchJSON(url, opts = {}) {
+  const res = await fetch(url, opts);
   if (!res.ok) {
-    const t = await res.text().catch(()=>'');
-    throw new Error(`HTTP ${res.status} – ${t}`);
+    const text = await res.text().catch(() => "");
+    const err = new Error(`HTTP ${res.status} ${res.statusText} @ ${url}\n${text}`);
+    err.status = res.status;
+    throw err;
   }
-  return res.json();
+  const ct = res.headers.get("content-type") || "";
+  return ct.includes("application/json") ? res.json() : res.text();
 }
-export async function startTitleJob(payload){
-  return post(TITLE_START_URL, payload);
+
+// --- Public API used by ui-form.js ---
+export async function startTitleJob(payload) {
+  // POST: nur Content-Type -> kein Preflight-Drama
+  return await fetchJSON(TITLE_START_URL, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
 }
-export async function pollTitleJob(jobId){
-  return post(TITLE_POLL_URL, { jobId });
+
+export async function pollTitleJob(jobId) {
+  const url = `${TITLE_POLL_URL}${encodeURIComponent(jobId)}`;
+
+  try {
+    // GET: KEINE HEADERS setzen -> keine Preflight
+    return await fetchJSON(url, { method: "GET" });
+  } catch (e) {
+    // Falls dein Poll-Webhook POST erwartet (oder GET 404/405 liefert), probieren wir POST.
+    if (e.status === 404 || e.status === 405) {
+      return await fetchJSON(TITLE_POLL_URL.replace(/\?.*$/, ""), {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ jobId }),
+      });
+    }
+    throw e;
+  }
 }
-export async function startTextJob(payload){
-  return post(TEXT_START_URL, payload);
+
+// (optional – falls du den Text-Flow nutzt)
+export async function startTextJob(payload) {
+  return await fetchJSON(TEXT_WEBHOOK_URL, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
 }
-export async function pollTextJob(jobId){
-  return post(TEXT_POLL_URL, { jobId });
+
+export async function pollTextJob(jobId) {
+  const url = `${TEXT_POLL_URL}${encodeURIComponent(jobId)}`;
+  try {
+    return await fetchJSON(url, { method: "GET" });
+  } catch (e) {
+    if (e.status === 404 || e.status === 405) {
+      return await fetchJSON(TEXT_POLL_URL.replace(/\?.*$/, ""), {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ jobId }),
+      });
+    }
+    throw e;
+  }
 }
