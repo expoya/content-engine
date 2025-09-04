@@ -50,6 +50,7 @@ function buildInstructions(cd){
 function readFormIntoState() {
   const cd = (state.companyData = state.companyData || {});
   cd.firma           = byId('firma')?.value || '';
+  cd.branche         = byId('branche')?.value || '';
   cd.expoCount       = Number(byId('exposCount')?.value || 0);
   cd.contentSourceId = byId('contentSourceId')?.value || '';
 
@@ -83,6 +84,7 @@ function readFormIntoState() {
 function applyFormFromState() {
   const cd = state.companyData || {};
   if (byId('firma')) byId('firma').value = cd.firma || '';
+  if (byId('branche')) byId('branche').value = cd.branche || '';  
   if (byId('exposCount')) byId('exposCount').value = cd.expoCount || 15;
   if (byId('contentSourceId')) byId('contentSourceId').value = cd.contentSourceId || '';
   if (byId('attribute')) byId('attribute').value = cd.attribute || '';
