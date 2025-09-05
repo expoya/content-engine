@@ -1,9 +1,10 @@
-// js/ui/renderExpoList.js.
+// js/ui/renderExpoList.js
 import { state } from '../state.js';
 import { startTextJob, pollTextJob } from '../api.js';
 import { showToast } from '../ui-loader.js';
 import { buildCommonPayload, readFormIntoState } from '../ui-form.js';
 import { renderMarkdownToHtml } from '../render.js';
+import { notify } from './notifier.js';
 
 function autogrow(el){
   if (!el) return;
@@ -23,7 +24,6 @@ function cleanToMarkdown(input){
 
   // ```json ... ``` → Fences entfernen
   if (s.startsWith('```')) {
-    // erste Zeile (``` oder ```json) entfernen
     const nl = s.indexOf('\n');
     if (nl !== -1) s = s.slice(nl + 1);
     if (s.endsWith('```')) s = s.slice(0, -3);
@@ -36,7 +36,6 @@ function cleanToMarkdown(input){
       const j = JSON.parse(s);
       if (typeof j === 'string') s = j;
       else if (Array.isArray(j)) {
-        // häufigster Fall: [{ text: "..." }]
         const first = j[0];
         if (first && typeof first === 'object') {
           s = first.text || first.markdown || first.content || s;
@@ -58,13 +57,10 @@ function cleanToMarkdown(input){
 
 /** Versucht aus einer beliebigen n8n-Antwort Markdown zu extrahieren */
 function extractMarkdownFromResponse(res){
-  // häufig: Objekt mit .text / .markdown
   if (res && typeof res === 'object') {
     if (typeof res.text === 'string') return cleanToMarkdown(res.text);
     if (typeof res.markdown === 'string') return cleanToMarkdown(res.markdown);
     if (typeof res.result === 'string') return cleanToMarkdown(res.result);
-
-    // Array-Fälle
     if (Array.isArray(res) && res.length) {
       const r0 = res[0];
       if (r0 && typeof r0 === 'object') {
@@ -73,14 +69,9 @@ function extractMarkdownFromResponse(res){
         if (typeof r0.result === 'string') return cleanToMarkdown(r0.result);
       }
     }
-    // Fallback: gesamtes Objekt als JSON-String säubern
     try { return cleanToMarkdown(JSON.stringify(res)); } catch { return cleanToMarkdown(String(res)); }
   }
-
-  // String-Fall
   if (typeof res === 'string') return cleanToMarkdown(res);
-
-  // Fallback
   return '';
 }
 
@@ -117,6 +108,21 @@ export function renderExpoList(){
     const okBtn  = document.createElement('button'); okBtn.className = 'btn-icon btn-check'; okBtn.title='Speichern'; okBtn.textContent='✓'; okBtn.style.display='none';
     const cancelBtn = document.createElement('button'); cancelBtn.className='btn-icon btn-cancel'; cancelBtn.title='Abbrechen'; cancelBtn.textContent='×'; cancelBtn.style.display='none';
 
+    // Titel kopieren (Copy Button)
+    const copyTitleBtn = document.createElement('button');
+    copyTitleBtn.className = 'btn-icon btn-copy';
+    copyTitleBtn.title = 'Titel kopieren';
+    copyTitleBtn.textContent = '📋';
+
+    copyTitleBtn.onclick = async () => {
+      try {
+        await navigator.clipboard.writeText((tEdit.style.display !== 'none' ? tEdit.value : tText.textContent) || '');
+        showToast('Titel kopiert');
+      } catch {
+        showToast('Kopieren fehlgeschlagen');
+      }
+    };
+
     const enterEdit = ()=>{
       tText.style.display='none';
       tEdit.style.display='inline-block';
@@ -146,24 +152,12 @@ export function renderExpoList(){
 
     tWrap.append(tText, tEdit, okBtn, cancelBtn);
 
-    // nach const t = document.createElement('div'); …
-const copyTitle = document.createElement('button');
-copyTitle.className = 'btn-icon btn-copy';
-copyTitle.textContent = '📋'; // oder ein SVG/Icon
-copyTitle.title = 'Titel kopieren';
-copyTitle.onclick = () => {
-  navigator.clipboard.writeText(t.textContent)
-    .then(()=> showToast('Titel kopiert'))
-    .catch(()=> showToast('Kopieren fehlgeschlagen'));
-};
-
-    // ---- Header rechts: Badge | Quick | Spinner | Delete | Arrow ----
+    // ---- Header rechts: Badge | Copy-Title | Quick | Spinner | Delete | Arrow ----
     const rightWrap = document.createElement('div'); rightWrap.className = 'akk-right';
 
     const badge = document.createElement('span');
     badge.className = 'badge badge-success';
     badge.textContent = '✓ Text da';
-    // vorhandene Inhalte beim Laden normalisieren → schon hier anzeigen
     if (state.textsMd[idx]) state.textsMd[idx] = cleanToMarkdown(state.textsMd[idx]);
     badge.style.display = (state.textsMd[idx]?.trim()) ? 'inline-flex' : 'none';
 
@@ -189,8 +183,8 @@ copyTitle.onclick = () => {
     arrow.textContent = '▾';
     expand.appendChild(arrow);
 
-    rightWrap.append(badge, quick, spinner, delBtn, expand);
-    header.append(index, tWrap, rightWrap, copyTitle);
+    rightWrap.append(badge, copyTitleBtn, quick, spinner, delBtn, expand);
+    header.append(index, tWrap, rightWrap);
 
     // ---- Body ----
     const body = document.createElement('div');
@@ -244,16 +238,6 @@ copyTitle.onclick = () => {
     toggle.append(viewBtn, editBtn);
     row.append(mdLabel, toggle);
 
-    const copyText = document.createElement('button');
-copyText.className = 'btn btn-secondary btn-copytext';
-copyText.textContent = 'Text kopieren';
-copyText.onclick = () => {
-  const plainText = prev.innerText || prev.textContent || '';
-  navigator.clipboard.writeText(plainText)
-    .then(()=> showToast('Text kopiert'))
-    .catch(()=> showToast('Kopieren fehlgeschlagen'));
-};
-
     // Markdown-Editor (nur bei "Bearbeiten")
     const mdEditor = document.createElement('textarea');
     mdEditor.id = `md-${idx}`;
@@ -267,6 +251,21 @@ copyText.onclick = () => {
     const viewBox = document.createElement('div');
     viewBox.className = 'preview-box';
     viewBox.innerHTML = renderMarkdownToHtml(mdEditor.value || '');
+
+    // Text kopieren (Markdown) – unabhängig vom Modus
+    const copyTextBtn = document.createElement('button');
+    copyTextBtn.className = 'btn btn-secondary';
+    copyTextBtn.textContent = 'Text kopieren';
+    copyTextBtn.style.alignSelf = 'flex-start';
+    copyTextBtn.onclick = async () => {
+      try {
+        // Markdown-Inhalt kopieren (präziser als reiner Plaintext aus HTML)
+        await navigator.clipboard.writeText(mdEditor.value || '');
+        showToast('Text kopiert');
+      } catch {
+        showToast('Kopieren fehlgeschlagen');
+      }
+    };
 
     const setMode = (mode)=>{ // 'view' | 'edit'
       if (mode === 'view'){
@@ -296,7 +295,7 @@ copyText.onclick = () => {
     viewBtn.onclick = ()=> setMode('view');
     editBtn.onclick = ()=> setMode('edit');
 
-    editorWrap.append(row, mdEditor, viewBox);
+    editorWrap.append(row, copyTextBtn, mdEditor, viewBox);
 
     // Buttons im Body: Generieren + Abbrechen
     const btnRow = document.createElement('div');
@@ -323,8 +322,9 @@ copyText.onclick = () => {
         badge.style.display = 'none';
         cancelRequested = false;
 
+        // Wichtig: aktuellen Formularstand (inkl. Modellwahl) einlesen
         readFormIntoState();
-        
+
         const base = buildCommonPayload();
         const payload = {
           ...base,
@@ -350,18 +350,19 @@ copyText.onclick = () => {
           const res = await pollTextJob(jobId);
           const status = String(res?.status || '').toLowerCase();
 
-          // --- WICHTIG: Markdown robust extrahieren & säubern ---
           const md = extractMarkdownFromResponse(res);
 
           if (isDone(status) || md) {
-            mdEditor.value = md || '';
-            state.textsMd[idx] = md || '';
+            const finalMd = md || '';
+            mdEditor.value = finalMd;
+            state.textsMd[idx] = finalMd;
             try { localStorage.setItem('expoya_ce_state_v2', JSON.stringify(state)); } catch {}
             autogrow(mdEditor);
-            viewBox.innerHTML = renderMarkdownToHtml(mdEditor.value || '');
+            viewBox.innerHTML = renderMarkdownToHtml(finalMd);
             showToast(md ? 'Text fertig' : 'Job fertig, aber kein Text erkannt');
-            badge.style.display = md && md.trim() ? 'inline-flex' : 'none';
+            badge.style.display = finalMd.trim() ? 'inline-flex' : 'none';
             setMode('view'); // nach Generierung direkt Ansicht
+            notify('Text fertig', `„${state.titles[idx]}“`);
             break;
           }
 
@@ -405,7 +406,7 @@ copyText.onclick = () => {
     };
 
     // Body zusammenbauen
-    body.append(noteWrap, btnRow, editorWrap, copyText);
+    body.append(noteWrap, btnRow, editorWrap);
 
     // Akkordeon Toggle (Pfeil dreht per CSS)
     expand.onclick = () => li.classList.toggle('open');
