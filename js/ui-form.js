@@ -75,13 +75,15 @@ function buildInstructions(cd){
 }
 
 /* ---------- state <-> form ---------- */
+// js/ui-form.js
 export function readFormIntoState() {
-  const cd = (state.companyData = state.companyData || {});
+  const cd = state.companyData = state.companyData || {};
+  const byId = (id) => document.getElementById(id);
+
   cd.firma           = byId('firma')?.value || '';
   cd.branche         = byId('branche')?.value || '';
   cd.expoCount       = Number(byId('exposCount')?.value || 0);
   cd.contentSourceId = byId('contentSourceId')?.value || '';
-
   cd.attribute       = byId('attribute')?.value || '';
   cd.zielsetzung     = byId('zielsetzung')?.value || '';
   cd.regionen        = byId('regionen')?.value || '';
@@ -90,7 +92,7 @@ export function readFormIntoState() {
   cd.keywords        = byId('keywords')?.value || '';
 
   cd.ortsbezug       = document.querySelector('input[name="ortsbezug"]:checked')?.value || 'ohne';
-  cd.ansprache       = document.querySelector('input[name="ansprache"]:checked')?.value || 'du';
+  cd.ansprache       = document.querySelector('input[name="ansprache"]:checked')?.value || 'sie';
   cd.branding        = document.querySelector('input[name="branding"]:checked')?.value || 'kein';
 
   cd.diversity_level = Number(byId('diversity_level')?.value || 3);
@@ -98,16 +100,15 @@ export function readFormIntoState() {
   cd.style_bias      = Number(byId('style_bias')?.value || 3);
 
   // Modelle
-  state.agentModels = {
-    ...(state.agentModels || {}),
-    titleGenerator  : byId('modelTitleGenerator')?.value,
-    titleController : byId('modelTitleController')?.value,
-    seoStrategist   : byId('modelSeoStrategist')?.value,
-    microTexter     : byId('modelMicroTexter')?.value,
-    seoVeredler     : byId('modelSeoVeredler')?.value,
-    seoAuditor      : byId('modelSeoAuditor')?.value,
-  };
+  state.agentModels = state.agentModels || {};
+  state.agentModels.titleGenerator  = byId('modelTitleGenerator')?.value;
+  state.agentModels.titleController = byId('modelTitleController')?.value;
+  state.agentModels.seoStrategist   = byId('modelSeoStrategist')?.value;
+  state.agentModels.microTexter     = byId('modelMicroTexter')?.value;
+  state.agentModels.seoVeredler     = byId('modelSeoVeredler')?.value;
+  state.agentModels.seoAuditor      = byId('modelSeoAuditor')?.value;
 }
+
 
 function applyFormFromState() {
   const cd = state.companyData || {};
@@ -222,7 +223,59 @@ async function startTitlesFlow(btn){
   readFormIntoState();
   showLoader('Titel werden generiert …');
   try{
-    const payload = { ...state.companyData, agentModels: state.agentModels };
+    const startRes = await startTitleJob({ ...state.companyData, agentModels: state.agentModels });
+    const jobId = startRes?.jobId || startRes?.id; 
+    if(!jobId) throw new Error('Kein jobId vom Webhook erhalten.');
+
+    const started = Date.now(); 
+    const MAX = 15*60*1000; 
+    let delay=2500;
+
+    while(true){
+      const elapsed = Date.now()-started; 
+      if(elapsed>MAX) throw new Error('Zeitüberschreitung beim Titel-Polling.');
+      updateLoader(`Pollen … (${Math.ceil(elapsed/1000)}s)`);
+
+      const res = await pollTitleJob(jobId);
+      const status = (res?.status || res?.[0]?.status || 'running').toLowerCase();
+
+      // Titel-Extraktion robust
+      let titles = res?.titles || res?.[0]?.titles || res?.data?.titles || [];
+      if (typeof titles === 'string') {
+        try { titles = JSON.parse(titles); } catch {}
+      }
+      if (!Array.isArray(titles)) titles = [];
+
+      if (status==='done' || titles.length){
+        // eindeutige, getrimmte Titel übernehmen
+        state.titles = Array.from(new Set(titles.map(t=>String(t||'').trim()).filter(Boolean)));
+
+        // *** WICHTIG: Texte & Notizen auf neue Länge leeren ***
+        const n = state.titles.length;
+        state.textsMd   = new Array(n).fill('');   // nur noch Markdown als Quelle
+        state.expoNotes = new Array(n).fill('');
+        // legacy raus
+        delete state.texts;
+
+        // speichern & rendern
+        try { localStorage.setItem('expoya_ce_state_v2', JSON.stringify(state)); } catch {}
+        hideLoader(); 
+        renderExpoList();
+        notify('Titel fertig', `Es wurden ${n} Titel generiert.`);
+        return;
+      }
+
+      if (status==='failed') throw new Error(res?.message || 'Titel-Job fehlgeschlagen.');
+      await new Promise(r=>setTimeout(r, delay)); 
+      delay = Math.min(15000, Math.round(delay*1.15));
+    }
+  }catch(e){ 
+    console.error(e); 
+    showToast(e.message||'Fehler beim Generieren der Titel'); 
+  }
+  finally{ hideLoader(); }
+}
+
 
 // Slider-Werte als Text-Felder mitschicken (statt diversity/detail/style)
 payload['Tonalität']  = mapSliderLabel('diversity_level', state.companyData.diversity_level);
