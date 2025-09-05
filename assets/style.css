@@ -231,3 +231,46 @@ input::placeholder, textarea::placeholder{font:inherit; color:var(--placeholder)
 /* Pfeil drehen, wenn offen */
 .arrow{ display:inline-block; transition: transform .18s ease }
 .expo-akkordeon.open .arrow{ transform: rotate(180deg) }
+
+/* Titelzeile: Edit-Modus */
+.akk-title-wrap{
+  display:flex;
+  align-items:center;
+  gap:6px;
+  flex:1;
+  min-width:120px;
+}
+.title-edit{
+  display:inline-block;
+  width:100%;
+  max-width:620px;
+  padding:8px 10px;
+  border:1px solid var(--line);
+  border-radius:8px;
+  font-size:14px;
+}
+.btn-check{
+  color:#fff;
+  background:var(--green);
+  border:1px solid var(--green);
+  width:28px; height:28px; border-radius:8px;
+}
+.btn-cancel{
+  color:#444;
+  background:#eef5f2;
+  border:1px solid var(--line);
+  width:28px; height:28px; border-radius:8px;
+}
+.btn-trash{
+  width:28px; height:28px; border-radius:8px;
+  background:#fff; border:1px solid var(--line);
+}
+.btn-trash:hover{ background:#fff2f2; border-color:#ffd6d6 }
+
+/* Header rechts im Akkordeon (bestehendes .akk-right bleibt) */
+.akk-right{ display:flex; align-items:center; gap:8px; margin-left:auto; }
+
+/* Spinner, Badge, Arrow drehen (bereits vorhanden) */
+.arrow{ display:inline-block; transition: transform .18s ease }
+.expo-akkordeon.open .arrow{ transform: rotate(180deg) }
+
