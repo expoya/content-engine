@@ -4,7 +4,7 @@ import { startTitleJob, pollTitleJob } from './api.js';
 import { showLoader, updateLoader, hideLoader, showToast } from './ui-loader.js';
 import { renderExpoList } from './ui/renderExpoList.js';
 import { PRESETS } from '../assets/presets.js';
-import { primeAudioOnUserGesture, notify } from './ui/notifier.js';
+import { primeAudioOnUserGesture, notify, attachSoundToggle } from './ui/notifier.js';
 
 const byId = (id) => document.getElementById(id);
 const TEXTAREAS = ['regionen','zielgruppen','produkte','keywords','attribute','zielsetzung'];
@@ -183,6 +183,8 @@ function initPresets(){
 /* ---------- Init & Flow ---------- */
 export async function initForm(){
   primeAudioOnUserGesture();
+  attachSoundToggle();
+
 
   TEXTAREAS.forEach(id => {
     const el = byId(id);
