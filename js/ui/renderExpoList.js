@@ -3,6 +3,7 @@ import { state } from '../state.js';
 import { startTextJob, pollTextJob } from '../api.js';
 import { showToast } from '../ui-loader.js';
 import { buildCommonPayload } from '../ui-form.js';
+import { renderMarkdownToHtml } from '../render.js';
 
 function autogrow(el){
   if (!el) return;
@@ -14,15 +15,32 @@ function autogrow(el){
 function parseMaybeJsonText(v){
   if (!v) return '';
   if (typeof v === 'string'){
-    const s = v.trim();
-    if (!s) return '';
-    if (s.startsWith('{') || s.startsWith('[')){
-      try{
-        const j = JSON.parse(s);
-        if (typeof j === 'string') return j;
-        if (j && typeof j === 'object') return j.text || j.markdown || j.content || s;
-      }catch{/* plain string */}
+    let s = v.trim();
+
+    // Falls in ```json ... ``` eingeschlossen → Fences entfernen
+    if (s.startsWith('```')) {
+      // 1. Zeile (``` oder ```json) weg
+      const nl = s.indexOf('\n');
+      if (nl !== -1) s = s.slice(nl + 1);
+      if (s.endsWith('```')) s = s.slice(0, -3);
+      s = s.trim();
     }
+
+    // Falls wie JSON aussieht → parsen
+    if (s.startsWith('{') || s.startsWith('[')) {
+      try {
+        const j = JSON.parse(s);
+        if (typeof j === 'string') s = j;
+        else if (j && typeof j === 'object') s = j.text || j.markdown || j.content || s;
+      } catch { /* plain string */ }
+    }
+
+    // übliche Escape-Sequenzen in echten Text verwandeln
+    s = s.replace(/\\n/g, '\n').replace(/\\"/g, '"').replace(/\\t/g, '\t');
+
+    // Falls noch Anführungszeichen außen rum sind
+    s = s.replace(/^"(.*)"$/s, '$1');
+
     return s;
   }
   if (v && typeof v === 'object'){
@@ -150,27 +168,77 @@ export function renderExpoList(){
     setTimeout(()=>autogrow(note), 0);
     noteWrap.append(noteLabel, note);
 
-    // EIN Feld: Markdown (editierbar)
+    // --- EIN Feld, aber mit Toggle: Ansicht (rendered) / Bearbeiten (markdown) ---
     const editorWrap = document.createElement('div');
     editorWrap.className = 'form-group';
+
+    const row = document.createElement('div');
+    row.style.display = 'flex';
+    row.style.justifyContent = 'space-between';
+    row.style.alignItems = 'center';
+
     const mdLabel = document.createElement('label');
     mdLabel.setAttribute('for', `md-${idx}`);
-    mdLabel.textContent = 'Text (Markdown, bearbeitbar)';
+    mdLabel.textContent = 'Text';
+
+    const toggle = document.createElement('div');
+    toggle.style.display = 'inline-flex';
+    toggle.style.gap = '6px';
+
+    const viewBtn = document.createElement('button');
+    viewBtn.className = 'btn btn-secondary';
+    viewBtn.textContent = 'Ansicht';
+
+    const editBtn = document.createElement('button');
+    editBtn.className = 'btn';
+    editBtn.textContent = 'Bearbeiten';
+
+    toggle.append(viewBtn, editBtn);
+    row.append(mdLabel, toggle);
+
+    // Markdown-Editor (nur wenn "Bearbeiten" aktiv)
     const mdEditor = document.createElement('textarea');
     mdEditor.id = `md-${idx}`;
     mdEditor.className = 'autogrow';
-    mdEditor.rows = 10;
+    mdEditor.rows = 14;
     mdEditor.style.width = '100%';
-    mdEditor.placeholder = 'Der generierte Text erscheint hier und kann bearbeitet werden …';
+    mdEditor.placeholder = 'Der Text erscheint hier und kann bearbeitet werden …';
     mdEditor.value = state.textsMd[idx] || '';
+
+    // Gerenderte Ansicht
+    const viewBox = document.createElement('div');
+    viewBox.className = 'preview-box';
+    viewBox.innerHTML = renderMarkdownToHtml(mdEditor.value || '');
+
+    const setMode = (mode)=>{ // 'view' | 'edit'
+      if (mode === 'view'){
+        viewBtn.className = 'btn btn-secondary';
+        editBtn.className = 'btn';
+        mdEditor.style.display = 'none';
+        viewBox.style.display = 'block';
+        viewBox.innerHTML = renderMarkdownToHtml(mdEditor.value || '');
+      } else {
+        viewBtn.className = 'btn';
+        editBtn.className = 'btn btn-secondary';
+        mdEditor.style.display = 'block';
+        viewBox.style.display = 'none';
+        autogrow(mdEditor);
+      }
+    };
+    // Default: Ansicht
+    setMode('view');
+
     mdEditor.addEventListener('input', ()=>{
       state.textsMd[idx] = mdEditor.value;
       try { localStorage.setItem('expoya_ce_state_v2', JSON.stringify(state)); } catch {}
       autogrow(mdEditor);
       badge.style.display = mdEditor.value.trim() ? 'inline-flex' : 'none';
     });
-    setTimeout(()=>autogrow(mdEditor), 0);
-    editorWrap.append(mdLabel, mdEditor);
+
+    viewBtn.onclick = ()=> setMode('view');
+    editBtn.onclick = ()=> setMode('edit');
+
+    editorWrap.append(row, mdEditor, viewBox);
 
     // Buttons im Body: Generieren + Abbrechen
     const btnRow = document.createElement('div');
@@ -200,7 +268,7 @@ export function renderExpoList(){
         const base = buildCommonPayload();
         const payload = {
           ...base,
-          'Titel': state.titles[idx],        // inkl. evtl. bearbeitetem Titel
+          'Titel': state.titles[idx],
           'Vorgaben & Ausschlüsse': note.value || ''
         };
 
@@ -223,15 +291,18 @@ export function renderExpoList(){
           const status = String(res?.status || '').toLowerCase();
 
           let md = res?.text || res?.markdown || res?.result || '';
-          md = parseMaybeJsonText(md); // JSON-Wrapper entfernen
+          md = parseMaybeJsonText(md); // JSON/Fences entfernen → reines Markdown
 
           if (isDone(status) || md) {
             mdEditor.value = md || '';
             state.textsMd[idx] = md || '';
             try { localStorage.setItem('expoya_ce_state_v2', JSON.stringify(state)); } catch {}
             autogrow(mdEditor);
+            // Ansicht sofort aktualisieren
+            viewBox.innerHTML = renderMarkdownToHtml(mdEditor.value || '');
             showToast(md ? 'Text fertig' : 'Job fertig, aber kein Text erkannt');
             badge.style.display = md && md.trim() ? 'inline-flex' : 'none';
+            setMode('view'); // nach dem Generieren direkt "Ansicht"
             break;
           }
 
@@ -274,10 +345,10 @@ export function renderExpoList(){
       renderExpoList();
     };
 
-    // Body zusammenbauen (nur Notes + Buttons + Markdown-Editor)
+    // Body zusammenbauen
     body.append(noteWrap, btnRow, editorWrap);
 
-    // Akkordeon Toggle (Pfeil dreht per CSS .expo-akkordeon.open .arrow)
+    // Akkordeon Toggle (Pfeil dreht per CSS)
     expand.onclick = () => li.classList.toggle('open');
 
     li.append(header, body);
