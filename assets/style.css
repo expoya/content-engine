@@ -288,4 +288,22 @@ input::placeholder, textarea::placeholder{font:inherit; color:var(--placeholder)
 .sound-btn[aria-pressed="false"]{ background:#f2fbf6; border-color:var(--green); color:var(--green); }
 .sound-btn[aria-pressed="true"]{ background:#fff; color:var(--muted); }
 
+.btn-copy {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  font-size: 16px;
+  padding: 4px;
+  margin-left: 6px;
+}
+
+.btn-copy:hover {
+  opacity: 0.7;
+}
+
+.btn-copytext {
+  margin-top: 6px;
+  font-size: 13px;
+  padding: 6px 10px;
+}
 
