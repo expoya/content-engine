@@ -89,8 +89,15 @@ export function renderExpoList(){
     return;
   }
 
-  state.textsMd   = state.textsMd   || [];   // einziges Textspeicherfeld (Markdown)
-  state.expoNotes = state.expoNotes || [];
+  // *** Längen-Guard: Arrays immer an Titel-Länge anpassen ***
+  const n = state.titles.length;
+  if (!Array.isArray(state.textsMd) || state.textsMd.length !== n) {
+    state.textsMd = new Array(n).fill('');
+  }
+  if (!Array.isArray(state.expoNotes) || state.expoNotes.length !== n) {
+    state.expoNotes = new Array(n).fill('');
+  }
+  try { localStorage.setItem('expoya_ce_state_v2', JSON.stringify(state)); } catch {}
 
   state.titles.forEach((title, idx) => {
     const li     = document.createElement('li');  li.className = 'expo-akkordeon';
@@ -108,12 +115,11 @@ export function renderExpoList(){
     const okBtn  = document.createElement('button'); okBtn.className = 'btn-icon btn-check'; okBtn.title='Speichern'; okBtn.textContent='✓'; okBtn.style.display='none';
     const cancelBtn = document.createElement('button'); cancelBtn.className='btn-icon btn-cancel'; cancelBtn.title='Abbrechen'; cancelBtn.textContent='×'; cancelBtn.style.display='none';
 
-    // Titel kopieren (Copy Button)
+    // Titel kopieren
     const copyTitleBtn = document.createElement('button');
     copyTitleBtn.className = 'btn-icon btn-copy';
     copyTitleBtn.title = 'Titel kopieren';
     copyTitleBtn.textContent = '📋';
-
     copyTitleBtn.onclick = async () => {
       try {
         await navigator.clipboard.writeText((tEdit.style.display !== 'none' ? tEdit.value : tText.textContent) || '');
@@ -190,7 +196,7 @@ export function renderExpoList(){
     const body = document.createElement('div');
     body.className = 'expo-akk-body';
 
-    // Vorgaben & Ausschlüsse (1-zeilig, autogrow)
+    // Vorgaben & Ausschlüsse
     const noteWrap = document.createElement('div');
     noteWrap.className = 'form-group';
     const noteLabel = document.createElement('label');
@@ -210,7 +216,7 @@ export function renderExpoList(){
     setTimeout(()=>autogrow(note), 0);
     noteWrap.append(noteLabel, note);
 
-    // --- EIN Feld, mit Toggle: Ansicht (rendered) / Bearbeiten (markdown) ---
+    // --- EIN Feld, mit Toggle: Ansicht / Bearbeiten ---
     const editorWrap = document.createElement('div');
     editorWrap.className = 'form-group';
 
@@ -238,7 +244,7 @@ export function renderExpoList(){
     toggle.append(viewBtn, editBtn);
     row.append(mdLabel, toggle);
 
-    // Markdown-Editor (nur bei "Bearbeiten")
+    // Markdown-Editor
     const mdEditor = document.createElement('textarea');
     mdEditor.id = `md-${idx}`;
     mdEditor.className = 'autogrow';
@@ -252,14 +258,13 @@ export function renderExpoList(){
     viewBox.className = 'preview-box';
     viewBox.innerHTML = renderMarkdownToHtml(mdEditor.value || '');
 
-    // Text kopieren (Markdown) – unabhängig vom Modus
+    // Text kopieren (Markdown)
     const copyTextBtn = document.createElement('button');
     copyTextBtn.className = 'btn btn-secondary';
     copyTextBtn.textContent = 'Text kopieren';
     copyTextBtn.style.alignSelf = 'flex-start';
     copyTextBtn.onclick = async () => {
       try {
-        // Markdown-Inhalt kopieren (präziser als reiner Plaintext aus HTML)
         await navigator.clipboard.writeText(mdEditor.value || '');
         showToast('Text kopiert');
       } catch {
@@ -282,7 +287,6 @@ export function renderExpoList(){
         autogrow(mdEditor);
       }
     };
-    // Default: Ansicht
     setMode('view');
 
     mdEditor.addEventListener('input', ()=>{
@@ -322,7 +326,7 @@ export function renderExpoList(){
         badge.style.display = 'none';
         cancelRequested = false;
 
-        // Wichtig: aktuellen Formularstand (inkl. Modellwahl) einlesen
+        // aktuellen Formularstand lesen (u. a. Modelle)
         readFormIntoState();
 
         const base = buildCommonPayload();
@@ -361,7 +365,7 @@ export function renderExpoList(){
             viewBox.innerHTML = renderMarkdownToHtml(finalMd);
             showToast(md ? 'Text fertig' : 'Job fertig, aber kein Text erkannt');
             badge.style.display = finalMd.trim() ? 'inline-flex' : 'none';
-            setMode('view'); // nach Generierung direkt Ansicht
+            setMode('view');
             notify('Text fertig', `„${state.titles[idx]}“`);
             break;
           }
