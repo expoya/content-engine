@@ -146,6 +146,17 @@ export function renderExpoList(){
 
     tWrap.append(tText, tEdit, okBtn, cancelBtn);
 
+    // nach const t = document.createElement('div'); …
+const copyTitle = document.createElement('button');
+copyTitle.className = 'btn-icon btn-copy';
+copyTitle.textContent = '📋'; // oder ein SVG/Icon
+copyTitle.title = 'Titel kopieren';
+copyTitle.onclick = () => {
+  navigator.clipboard.writeText(t.textContent)
+    .then(()=> showToast('Titel kopiert'))
+    .catch(()=> showToast('Kopieren fehlgeschlagen'));
+};
+
     // ---- Header rechts: Badge | Quick | Spinner | Delete | Arrow ----
     const rightWrap = document.createElement('div'); rightWrap.className = 'akk-right';
 
@@ -179,7 +190,7 @@ export function renderExpoList(){
     expand.appendChild(arrow);
 
     rightWrap.append(badge, quick, spinner, delBtn, expand);
-    header.append(index, tWrap, rightWrap);
+    header.append(index, tWrap, rightWrap, copyTitle);
 
     // ---- Body ----
     const body = document.createElement('div');
@@ -232,6 +243,16 @@ export function renderExpoList(){
 
     toggle.append(viewBtn, editBtn);
     row.append(mdLabel, toggle);
+
+    const copyText = document.createElement('button');
+copyText.className = 'btn btn-secondary btn-copytext';
+copyText.textContent = 'Text kopieren';
+copyText.onclick = () => {
+  const plainText = prev.innerText || prev.textContent || '';
+  navigator.clipboard.writeText(plainText)
+    .then(()=> showToast('Text kopiert'))
+    .catch(()=> showToast('Kopieren fehlgeschlagen'));
+};
 
     // Markdown-Editor (nur bei "Bearbeiten")
     const mdEditor = document.createElement('textarea');
@@ -384,7 +405,7 @@ export function renderExpoList(){
     };
 
     // Body zusammenbauen
-    body.append(noteWrap, btnRow, editorWrap);
+    body.append(noteWrap, btnRow, editorWrap, copyText);
 
     // Akkordeon Toggle (Pfeil dreht per CSS)
     expand.onclick = () => li.classList.toggle('open');
