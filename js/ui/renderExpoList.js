@@ -1,4 +1,4 @@
-// js/ui/renderExpoList.js.
+// js/ui/renderExpoList.js
 import { state } from '../state.js';
 import { startTextJob, pollTextJob } from '../api.js';
 import { renderMarkdownToHtml } from '../render.js';
@@ -24,9 +24,9 @@ function parseMaybeJsonText(v){
         if (j && typeof j === 'object') {
           return j.text || j.markdown || j.content || s;
         }
-      } catch { /* plain string */ }
+      } catch {}
     }
-    return s; // plain markdown/text
+    return s;
   }
   if (v && typeof v === 'object') {
     return v.text || v.markdown || v.content || '';
@@ -55,10 +55,49 @@ export function renderExpoList(){
   state.titles.forEach((title, idx) => {
     const li     = document.createElement('li');  li.className = 'expo-akkordeon';
     const header = document.createElement('div'); header.className = 'expo-akk-header';
-    const index  = document.createElement('div'); index.className  = 'expo-akk-index';  index.textContent = String(idx + 1).padStart(2,'0');
-    const t      = document.createElement('div'); t.className      = 'expo-akk-titel';   t.textContent = title;
 
-    // Quick Action rechts: Badge | Quick-Button | Spinner | Pfeil
+    const index  = document.createElement('div'); index.className  = 'expo-akk-index';  index.textContent = String(idx + 1).padStart(2,'0');
+
+    // ---- Titel (editierbar) ----
+    const tWrap  = document.createElement('div'); tWrap.className = 'akk-title-wrap';
+    const tText  = document.createElement('div'); tText.className  = 'expo-akk-titel';   tText.textContent = title;
+
+    const tEdit  = document.createElement('input'); tEdit.className = 'title-edit';
+    tEdit.type = 'text'; tEdit.value = title; tEdit.style.display = 'none';
+
+    const okBtn  = document.createElement('button'); okBtn.className = 'btn-icon btn-check'; okBtn.title='Speichern'; okBtn.textContent='✓'; okBtn.style.display='none';
+    const cancelBtn = document.createElement('button'); cancelBtn.className='btn-icon btn-cancel'; cancelBtn.title='Abbrechen'; cancelBtn.textContent='×'; cancelBtn.style.display='none';
+
+    const enterEdit = ()=>{
+      tText.style.display='none';
+      tEdit.style.display='inline-block';
+      okBtn.style.display='inline-flex';
+      cancelBtn.style.display='inline-flex';
+      tEdit.value = state.titles[idx] || '';
+      tEdit.focus(); tEdit.select();
+    };
+    const saveEdit = ()=>{
+      const v = (tEdit.value || '').trim();
+      if (!v) return;
+      state.titles[idx] = v;
+      tText.textContent = v;
+      exitEdit();
+      try { localStorage.setItem('expoya_ce_state_v2', JSON.stringify(state)); } catch {}
+    };
+    const exitEdit = ()=>{
+      tText.style.display='inline-block';
+      tEdit.style.display='none';
+      okBtn.style.display='none';
+      cancelBtn.style.display='none';
+    };
+    tText.onclick = enterEdit;
+    okBtn.onclick = saveEdit;
+    cancelBtn.onclick = exitEdit;
+    tEdit.addEventListener('keydown',(e)=>{ if(e.key==='Enter') saveEdit(); if(e.key==='Escape') exitEdit(); });
+
+    tWrap.append(tText, tEdit, okBtn, cancelBtn);
+
+    // ---- Header rechts: Badge | Quick | Spinner | Delete | Arrow ----
     const rightWrap = document.createElement('div'); rightWrap.className = 'akk-right';
 
     const badge = document.createElement('span');
@@ -75,6 +114,11 @@ export function renderExpoList(){
     spinner.className = 'spinner sm';
     spinner.style.display = 'none';
 
+    const delBtn = document.createElement('button');
+    delBtn.className = 'btn-icon btn-trash';
+    delBtn.title = 'Titel/Expo löschen';
+    delBtn.innerHTML = '🗑';
+
     const expand = document.createElement('button');
     expand.className = 'btn-icon btn-expand';
     expand.setAttribute('aria-label','Aufklappen');
@@ -83,14 +127,14 @@ export function renderExpoList(){
     arrow.textContent = '▾';
     expand.appendChild(arrow);
 
-    rightWrap.append(badge, quick, spinner, expand);
-    header.append(index, t, rightWrap);
+    rightWrap.append(badge, quick, spinner, delBtn, expand);
+    header.append(index, tWrap, rightWrap);
 
-    // Body
+    // ---- Body ----
     const body = document.createElement('div');
     body.className = 'expo-akk-body';
 
-    // Vorgaben & Ausschlüsse
+    // Vorgaben & Ausschlüsse (1-zeilig, autogrow)
     const noteWrap = document.createElement('div');
     noteWrap.className = 'form-group';
     const noteLabel = document.createElement('label');
@@ -139,15 +183,14 @@ export function renderExpoList(){
     prev.className = 'preview-box';
     prev.innerHTML = state.texts[idx] || '';
 
-    // Primary-Button im Body (optional)
+    // Primary-Button im Body
     const gen = document.createElement('button');
     gen.className = 'btn btn-primary';
     gen.textContent = 'Text generieren';
 
-    // Gemeinsame Start-Funktion (Quick + Body-Button nutzen dieselbe Logik)
+    // ---- Start-Logik (Quick + Body-Button verwenden dieselbe) ----
     const startGeneration = async () => {
       try{
-        // UI-States
         gen.disabled = true;
         gen.textContent = 'Generiere …';
         quick.style.display = 'none';
@@ -157,7 +200,7 @@ export function renderExpoList(){
         const base = buildCommonPayload();
         const payload = {
           ...base,
-          'Titel': title,
+          'Titel': state.titles[idx],        // evtl. bearbeitet
           'Vorgaben & Ausschlüsse': note.value || ''
         };
 
@@ -165,8 +208,7 @@ export function renderExpoList(){
         const jobId = start?.jobId || start?.id;
         if (!jobId) throw new Error('Kein jobId vom Text-Webhook erhalten.');
 
-        // Poll
-        const isDone = (s) => ['done','success','completed','finished','ready'].includes(String(s||'').toLowerCase());
+        const isDone   = (s) => ['done','success','completed','finished','ready'].includes(String(s||'').toLowerCase());
         const isFailed = (s) => ['failed','error'].includes(String(s||'').toLowerCase());
 
         let delay = 2500 + (idx % 5) * 200;
@@ -209,23 +251,34 @@ export function renderExpoList(){
         gen.disabled = false;
         gen.textContent = 'Text generieren';
         spinner.style.display = 'none';
-        // Wenn noch kein Text vorhanden ist, Quick wieder zeigen
         if (!mdEditor.value.trim()) quick.style.display = 'inline-flex';
       }
     };
 
     quick.onclick = startGeneration;
-    gen.onclick = startGeneration;
+    gen.onclick   = startGeneration;
 
-    // Body-Reihenfolge – kein altes Ausgabefeld mehr
-    body.append(noteWrap, gen, editorWrap, prev);
-
-    // Akkordeon-Verhalten
-    expand.onclick = () => {
-      li.classList.toggle('open');
-      // Pfeil drehen per CSS (siehe .expo-akkordeon.open .arrow)
+    // ---- Löschen eines Titels/Expos ----
+    delBtn.onclick = ()=>{
+      if (!confirm('Diesen Titel/Expo löschen?')) return;
+      state.titles.splice(idx,1);
+      state.texts.splice(idx,1);
+      state.textsMd.splice(idx,1);
+      state.expoNotes.splice(idx,1);
+      try { localStorage.setItem('expoya_ce_state_v2', JSON.stringify(state)); } catch {}
+      renderExpoList();
     };
 
+    // Body zusammenbauen (ohne „altes Ausgabefeld“)
+    body.append(noteWrap, gen, editorWrap, prev);
+
+    // Akkordeon-Toggle
+    expand.onclick = () => {
+      li.classList.toggle('open');
+      // Pfeil dreht per CSS (arrow)
+    };
+
+    header.appendChild(rightWrap);
     li.append(header, body);
     ul.appendChild(li);
   });
