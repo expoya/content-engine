@@ -12,40 +12,75 @@ function autogrow(el){
   el.style.height = Math.min(max, el.scrollHeight) + 'px';
 }
 
-function parseMaybeJsonText(v){
-  if (!v) return '';
-  if (typeof v === 'string'){
-    let s = v.trim();
+/** Entfernt ```json fences, parst JSON-Wrapper { "text": "..." } und unescaped \n, \" usw. */
+function cleanToMarkdown(input){
+  if (input == null) return '';
+  let s = typeof input === 'string' ? input : (() => {
+    try { return JSON.stringify(input); } catch { return String(input); }
+  })();
 
-    // Falls in ```json ... ``` eingeschlossen → Fences entfernen
-    if (s.startsWith('```')) {
-      // 1. Zeile (``` oder ```json) weg
-      const nl = s.indexOf('\n');
-      if (nl !== -1) s = s.slice(nl + 1);
-      if (s.endsWith('```')) s = s.slice(0, -3);
-      s = s.trim();
-    }
+  s = s.trim();
 
-    // Falls wie JSON aussieht → parsen
-    if (s.startsWith('{') || s.startsWith('[')) {
-      try {
-        const j = JSON.parse(s);
-        if (typeof j === 'string') s = j;
-        else if (j && typeof j === 'object') s = j.text || j.markdown || j.content || s;
-      } catch { /* plain string */ }
-    }
-
-    // übliche Escape-Sequenzen in echten Text verwandeln
-    s = s.replace(/\\n/g, '\n').replace(/\\"/g, '"').replace(/\\t/g, '\t');
-
-    // Falls noch Anführungszeichen außen rum sind
-    s = s.replace(/^"(.*)"$/s, '$1');
-
-    return s;
+  // ```json ... ``` → Fences entfernen
+  if (s.startsWith('```')) {
+    // erste Zeile (``` oder ```json) entfernen
+    const nl = s.indexOf('\n');
+    if (nl !== -1) s = s.slice(nl + 1);
+    if (s.endsWith('```')) s = s.slice(0, -3);
+    s = s.trim();
   }
-  if (v && typeof v === 'object'){
-    return v.text || v.markdown || v.content || '';
+
+  // Wenn wie JSON aussieht: versuchen zu parsen
+  if (s.startsWith('{') || s.startsWith('[')) {
+    try {
+      const j = JSON.parse(s);
+      if (typeof j === 'string') s = j;
+      else if (Array.isArray(j)) {
+        // häufigster Fall: [{ text: "..." }]
+        const first = j[0];
+        if (first && typeof first === 'object') {
+          s = first.text || first.markdown || first.content || s;
+        }
+      } else if (j && typeof j === 'object') {
+        s = j.text || j.markdown || j.content || s;
+      }
+    } catch { /* plain string belassen */ }
   }
+
+  // Unescapes
+  s = s.replace(/\\n/g, '\n').replace(/\\"/g, '"').replace(/\\t/g, '\t');
+
+  // Eventuelle äußere Anführungszeichen entfernen
+  s = s.replace(/^"(.*)"$/s, '$1');
+
+  return s.trim();
+}
+
+/** Versucht aus einer beliebigen n8n-Antwort Markdown zu extrahieren */
+function extractMarkdownFromResponse(res){
+  // häufig: Objekt mit .text / .markdown
+  if (res && typeof res === 'object') {
+    if (typeof res.text === 'string') return cleanToMarkdown(res.text);
+    if (typeof res.markdown === 'string') return cleanToMarkdown(res.markdown);
+    if (typeof res.result === 'string') return cleanToMarkdown(res.result);
+
+    // Array-Fälle
+    if (Array.isArray(res) && res.length) {
+      const r0 = res[0];
+      if (r0 && typeof r0 === 'object') {
+        if (typeof r0.text === 'string') return cleanToMarkdown(r0.text);
+        if (typeof r0.markdown === 'string') return cleanToMarkdown(r0.markdown);
+        if (typeof r0.result === 'string') return cleanToMarkdown(r0.result);
+      }
+    }
+    // Fallback: gesamtes Objekt als JSON-String säubern
+    try { return cleanToMarkdown(JSON.stringify(res)); } catch { return cleanToMarkdown(String(res)); }
+  }
+
+  // String-Fall
+  if (typeof res === 'string') return cleanToMarkdown(res);
+
+  // Fallback
   return '';
 }
 
@@ -117,6 +152,8 @@ export function renderExpoList(){
     const badge = document.createElement('span');
     badge.className = 'badge badge-success';
     badge.textContent = '✓ Text da';
+    // vorhandene Inhalte beim Laden normalisieren → schon hier anzeigen
+    if (state.textsMd[idx]) state.textsMd[idx] = cleanToMarkdown(state.textsMd[idx]);
     badge.style.display = (state.textsMd[idx]?.trim()) ? 'inline-flex' : 'none';
 
     const quick = document.createElement('button');
@@ -168,7 +205,7 @@ export function renderExpoList(){
     setTimeout(()=>autogrow(note), 0);
     noteWrap.append(noteLabel, note);
 
-    // --- EIN Feld, aber mit Toggle: Ansicht (rendered) / Bearbeiten (markdown) ---
+    // --- EIN Feld, mit Toggle: Ansicht (rendered) / Bearbeiten (markdown) ---
     const editorWrap = document.createElement('div');
     editorWrap.className = 'form-group';
 
@@ -196,7 +233,7 @@ export function renderExpoList(){
     toggle.append(viewBtn, editBtn);
     row.append(mdLabel, toggle);
 
-    // Markdown-Editor (nur wenn "Bearbeiten" aktiv)
+    // Markdown-Editor (nur bei "Bearbeiten")
     const mdEditor = document.createElement('textarea');
     mdEditor.id = `md-${idx}`;
     mdEditor.className = 'autogrow';
@@ -252,7 +289,7 @@ export function renderExpoList(){
     cancel.style.display = 'none';
     btnRow.append(gen, cancel);
 
-    // ---- gemeinsame Start-Logik inkl. Cancel ----
+    // ---- Start-Logik inkl. Cancel ----
     let cancelRequested = false;
 
     const startGeneration = async () => {
@@ -290,19 +327,18 @@ export function renderExpoList(){
           const res = await pollTextJob(jobId);
           const status = String(res?.status || '').toLowerCase();
 
-          let md = res?.text || res?.markdown || res?.result || '';
-          md = parseMaybeJsonText(md); // JSON/Fences entfernen → reines Markdown
+          // --- WICHTIG: Markdown robust extrahieren & säubern ---
+          const md = extractMarkdownFromResponse(res);
 
           if (isDone(status) || md) {
             mdEditor.value = md || '';
             state.textsMd[idx] = md || '';
             try { localStorage.setItem('expoya_ce_state_v2', JSON.stringify(state)); } catch {}
             autogrow(mdEditor);
-            // Ansicht sofort aktualisieren
             viewBox.innerHTML = renderMarkdownToHtml(mdEditor.value || '');
             showToast(md ? 'Text fertig' : 'Job fertig, aber kein Text erkannt');
             badge.style.display = md && md.trim() ? 'inline-flex' : 'none';
-            setMode('view'); // nach dem Generieren direkt "Ansicht"
+            setMode('view'); // nach Generierung direkt Ansicht
             break;
           }
 
