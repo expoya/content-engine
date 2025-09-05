@@ -75,7 +75,7 @@ function buildInstructions(cd){
 }
 
 /* ---------- state <-> form ---------- */
-function readFormIntoState() {
+export function readFormIntoState() {
   const cd = (state.companyData = state.companyData || {});
   cd.firma           = byId('firma')?.value || '';
   cd.branche         = byId('branche')?.value || '';
