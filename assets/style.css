@@ -274,3 +274,18 @@ input::placeholder, textarea::placeholder{font:inherit; color:var(--placeholder)
 .arrow{ display:inline-block; transition: transform .18s ease }
 .expo-akkordeon.open .arrow{ transform: rotate(180deg) }
 
+/* Sound Toggle in der Topbar */
+.topbar{ display:flex; justify-content:space-between; align-items:center; }
+.topbar-ctrls{ display:flex; align-items:center; gap:8px; padding:8px 12px; }
+.sound-btn{
+  border:1px solid var(--line);
+  background:#fff;
+  border-radius:10px;
+  padding:8px 10px;
+  font-weight:600;
+  cursor:pointer;
+}
+.sound-btn[aria-pressed="false"]{ background:#f2fbf6; border-color:var(--green); color:var(--green); }
+.sound-btn[aria-pressed="true"]{ background:#fff; color:var(--muted); }
+
+
