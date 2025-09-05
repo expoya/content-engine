@@ -2,7 +2,7 @@
 import { state } from '../state.js';
 import { startTextJob, pollTextJob } from '../api.js';
 import { showToast } from '../ui-loader.js';
-import { buildCommonPayload } from '../ui-form.js';
+import { buildCommonPayload, readFormIntoState } from '../ui-form.js';
 import { renderMarkdownToHtml } from '../render.js';
 
 function autogrow(el){
@@ -302,6 +302,8 @@ export function renderExpoList(){
         badge.style.display = 'none';
         cancelRequested = false;
 
+        readFormIntoState();
+        
         const base = buildCommonPayload();
         const payload = {
           ...base,
