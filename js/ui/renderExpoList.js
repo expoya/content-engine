@@ -1,7 +1,6 @@
-// js/ui/renderExpoList.js.
+// js/ui/renderExpoList.js
 import { state } from '../state.js';
 import { startTextJob, pollTextJob } from '../api.js';
-import { renderMarkdownToHtml } from '../render.js';
 import { showToast } from '../ui-loader.js';
 import { buildCommonPayload } from '../ui-form.js';
 
@@ -14,21 +13,19 @@ function autogrow(el){
 
 function parseMaybeJsonText(v){
   if (!v) return '';
-  if (typeof v === 'string') {
+  if (typeof v === 'string'){
     const s = v.trim();
     if (!s) return '';
-    if (s.startsWith('{') || s.startsWith('[')) {
-      try {
+    if (s.startsWith('{') || s.startsWith('[')){
+      try{
         const j = JSON.parse(s);
         if (typeof j === 'string') return j;
-        if (j && typeof j === 'object') {
-          return j.text || j.markdown || j.content || s;
-        }
-      } catch {}
+        if (j && typeof j === 'object') return j.text || j.markdown || j.content || s;
+      }catch{/* plain string */}
     }
     return s;
   }
-  if (v && typeof v === 'object') {
+  if (v && typeof v === 'object'){
     return v.text || v.markdown || v.content || '';
   }
   return '';
@@ -48,8 +45,7 @@ export function renderExpoList(){
     return;
   }
 
-  state.textsMd   = state.textsMd   || [];
-  state.texts     = state.texts     || [];
+  state.textsMd   = state.textsMd   || [];   // einziges Textspeicherfeld (Markdown)
   state.expoNotes = state.expoNotes || [];
 
   state.titles.forEach((title, idx) => {
@@ -58,7 +54,7 @@ export function renderExpoList(){
 
     const index  = document.createElement('div'); index.className  = 'expo-akk-index';  index.textContent = String(idx + 1).padStart(2,'0');
 
-    // ---- Titel (editierbar) ----
+    // ---- Titel (inline editierbar) ----
     const tWrap  = document.createElement('div'); tWrap.className = 'akk-title-wrap';
     const tText  = document.createElement('div'); tText.className  = 'expo-akk-titel';   tText.textContent = title;
 
@@ -154,7 +150,7 @@ export function renderExpoList(){
     setTimeout(()=>autogrow(note), 0);
     noteWrap.append(noteLabel, note);
 
-    // Markdown-Editor (bearbeitbar)
+    // EIN Feld: Markdown (editierbar)
     const editorWrap = document.createElement('div');
     editorWrap.className = 'form-group';
     const mdLabel = document.createElement('label');
@@ -163,14 +159,12 @@ export function renderExpoList(){
     const mdEditor = document.createElement('textarea');
     mdEditor.id = `md-${idx}`;
     mdEditor.className = 'autogrow';
-    mdEditor.rows = 8;
+    mdEditor.rows = 10;
     mdEditor.style.width = '100%';
     mdEditor.placeholder = 'Der generierte Text erscheint hier und kann bearbeitet werden …';
     mdEditor.value = state.textsMd[idx] || '';
     mdEditor.addEventListener('input', ()=>{
       state.textsMd[idx] = mdEditor.value;
-      const html = renderMarkdownToHtml(mdEditor.value || '');
-      state.texts[idx] = html;
       try { localStorage.setItem('expoya_ce_state_v2', JSON.stringify(state)); } catch {}
       autogrow(mdEditor);
       badge.style.display = mdEditor.value.trim() ? 'inline-flex' : 'none';
@@ -178,29 +172,35 @@ export function renderExpoList(){
     setTimeout(()=>autogrow(mdEditor), 0);
     editorWrap.append(mdLabel, mdEditor);
 
-    // Vorschau (sauber gerendert)
-    const prev = document.createElement('div');
-    prev.className = 'preview-box';
-    prev.innerHTML = state.texts[idx] || '';
-
-    // Primary-Button im Body
+    // Buttons im Body: Generieren + Abbrechen
+    const btnRow = document.createElement('div');
+    btnRow.className = 'actions';
     const gen = document.createElement('button');
     gen.className = 'btn btn-primary';
     gen.textContent = 'Text generieren';
+    const cancel = document.createElement('button');
+    cancel.className = 'btn btn-secondary';
+    cancel.textContent = 'Abbrechen';
+    cancel.style.display = 'none';
+    btnRow.append(gen, cancel);
 
-    // ---- Start-Logik (Quick + Body-Button verwenden dieselbe) ----
+    // ---- gemeinsame Start-Logik inkl. Cancel ----
+    let cancelRequested = false;
+
     const startGeneration = async () => {
       try{
         gen.disabled = true;
         gen.textContent = 'Generiere …';
+        cancel.style.display = 'inline-block';
         quick.style.display = 'none';
         spinner.style.display = 'inline-block';
         badge.style.display = 'none';
+        cancelRequested = false;
 
         const base = buildCommonPayload();
         const payload = {
           ...base,
-          'Titel': state.titles[idx],        // evtl. bearbeitet
+          'Titel': state.titles[idx],        // inkl. evtl. bearbeitetem Titel
           'Vorgaben & Ausschlüsse': note.value || ''
         };
 
@@ -216,20 +216,20 @@ export function renderExpoList(){
         const started = Date.now();
 
         while (true) {
+          if (cancelRequested) throw new Error('Abgebrochen.');
           if (Date.now() - started > MAX) throw new Error('Zeitüberschreitung beim Text-Polling.');
+
           const res = await pollTextJob(jobId);
           const status = String(res?.status || '').toLowerCase();
 
           let md = res?.text || res?.markdown || res?.result || '';
-          md = parseMaybeJsonText(md);
+          md = parseMaybeJsonText(md); // JSON-Wrapper entfernen
 
           if (isDone(status) || md) {
             mdEditor.value = md || '';
             state.textsMd[idx] = md || '';
-            const html = renderMarkdownToHtml(md || '');
-            state.texts[idx] = html;
-            prev.innerHTML = html;
             try { localStorage.setItem('expoya_ce_state_v2', JSON.stringify(state)); } catch {}
+            autogrow(mdEditor);
             showToast(md ? 'Text fertig' : 'Job fertig, aber kein Text erkannt');
             badge.style.display = md && md.trim() ? 'inline-flex' : 'none';
             break;
@@ -245,40 +245,41 @@ export function renderExpoList(){
         }
 
       } catch (e) {
-        console.error(e);
-        showToast(e?.message || 'Fehler bei Text-Job');
+        if (e?.message === 'Abgebrochen.') {
+          showToast('Generierung abgebrochen');
+        } else {
+          console.error(e);
+          showToast(e?.message || 'Fehler bei Text-Job');
+        }
       } finally {
         gen.disabled = false;
         gen.textContent = 'Text generieren';
         spinner.style.display = 'none';
+        cancel.style.display = 'none';
         if (!mdEditor.value.trim()) quick.style.display = 'inline-flex';
       }
     };
 
     quick.onclick = startGeneration;
     gen.onclick   = startGeneration;
+    cancel.onclick = () => { cancelRequested = true; };
 
     // ---- Löschen eines Titels/Expos ----
     delBtn.onclick = ()=>{
       if (!confirm('Diesen Titel/Expo löschen?')) return;
       state.titles.splice(idx,1);
-      state.texts.splice(idx,1);
       state.textsMd.splice(idx,1);
       state.expoNotes.splice(idx,1);
       try { localStorage.setItem('expoya_ce_state_v2', JSON.stringify(state)); } catch {}
       renderExpoList();
     };
 
-    // Body zusammenbauen (ohne „altes Ausgabefeld“)
-    body.append(noteWrap, gen, editorWrap, prev);
+    // Body zusammenbauen (nur Notes + Buttons + Markdown-Editor)
+    body.append(noteWrap, btnRow, editorWrap);
 
-    // Akkordeon-Toggle
-    expand.onclick = () => {
-      li.classList.toggle('open');
-      // Pfeil dreht per CSS (arrow)
-    };
+    // Akkordeon Toggle (Pfeil dreht per CSS .expo-akkordeon.open .arrow)
+    expand.onclick = () => li.classList.toggle('open');
 
-    header.appendChild(rightWrap);
     li.append(header, body);
     ul.appendChild(li);
   });
